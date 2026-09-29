@@ -6,12 +6,11 @@ Le projet est une application web Google Apps Script reliée à Google Sheets et
 
 ## Ce que fait l’application
 
-L’interface comporte quatre vues :
+L’interface comporte trois vues :
 
-1. **Synthèse activités** : schéma « Du terrain à la décision », seul contenu de la première page.
+1. **Synthèse activités** : schéma interactif « Du terrain à la décision » en 4 étapes (terrain, consolidation, analyse, décision MFT), avec les compteurs réels, des liens vers les vues et le raccourci « Préparer la réunion MFT ».
 2. **Pilotage** : revue interactive centrée sur la disponibilité UPA/MEDU, la qualité de la donnée MES d’origine, les coûts NC/MES par famille ou IMMO, la ventilation par MSN et le Pareto des défauts. Les graphiques MES et fusionnés se basculent avec le sélecteur **Famille / IMMO**.
-3. **Analyses Aléas PA** : lecture directe de `Remontées aléas production`, pour les lignes PA des postes 280/290 ; KPI, tendance interactive, Pareto IMMO/familles, type de machine, catégorie, taux pour 1 000 perçages et historique filtré.
-4. **Analyses NC PA** : KPI propres aux NC du périmètre PA, y compris celles sans IMMO identifiées par un nom de machine, un poste ou une indication famille, tendance interactive basée sur le nombre de NC, Pareto IMMO/familles, poste ou machine source, typologie, MSN et historique filtré.
+3. **Analyses NC TC** : KPI propres aux NC du périmètre TC, y compris celles sans IMMO identifiées par un nom de machine, un poste ou une indication famille, tendance interactive basée sur le nombre de NC, Pareto IMMO/familles, poste ou machine source, typologie, MSN et historique filtré.
 
 Les périodes courantes du pilotage et des NC lisent `FAITS_IMMO`, limité à une fenêtre glissante de 24 mois. Le filtre **Tout** et les périodes commençant avant cette fenêtre ajoutent `FAITS_IMMO_ARCHIVES`, sans doublonner les événements présents dans les deux tables. L’analyse Aléas PA lit directement sa source afin de ne pas dépendre d’une actualisation globale.
 
@@ -143,14 +142,25 @@ Les barres des graphiques « Coût par famille » et « Coût par IMMO » sont c
 | Vert | Action clôturée et prise en compte depuis moins de 6 mois |
 | Bleu | Au moins une action ouverte ou en cours (`Open`, `Due`, `En cours`, statut vide d’une action récente) |
 | Orange pastel | Dernière action clôturée depuis plus de 6 mois alors que la machine génère de nouveau des coûts : le problème revient |
-| Rouge | Aucune action (non prise en compte), ou action seulement reportée / abandonnée |
+| Violet doux | Aucune action (non prise en compte), ou action seulement reportée / abandonnée |
 | Gris | Plan illisible ou incomplet : statut inconnu |
 
-Si plusieurs actions portent sur la même machine : bleu > vert > orange > rouge.
+Si plusieurs actions portent sur la même machine : bleu > vert > orange > violet. La légende est cliquable et le filtre **Suivi plan d’actions** (raccourci « À traiter en MFT » = violet + orange) limite les barres affichées, sans rechargement. Un clic sur une barre ouvre le détail avec les actions MFT liées (réf., statut, échéance, clôture, responsable) et un bouton pour filtrer tout le tableau de bord sur cet élément.
 
 La date de clôture n’existe pas dans les onglets datés du plan : elle est reconstituée à partir de l’historique. Le script lit les onglets des 6 derniers mois et l’onglet précédent ; une action est datée à la première réunion où elle passe à `Done`. Une action déjà terminée dans le premier onglet lu est datée par la dernière date de son commentaire, puis par son échéance. Une action ouverte qui disparaît du plan est considérée close à la réunion suivante. Si le classeur ne contient plus d’onglets datés, la table `MFT_ACTIONS_OFFICIEL` et sa colonne `DATE_CLOTURE` sont utilisées.
 
-Le KPI « Coûts non traités » donne la part des coûts NC + MES par famille en rouge ou en orange ; sa note détaille les montants sans action, récurrents, en cours et clôturés. L’analyse détaillée des plans et les recommandations d’organisation sont dans [l’analyse du 29 septembre 2026](../Dashboard%20Pilote%20Machine%20PA/docs/audits/ANALYSE-PLANS-ACTIONS-2026-09-29.md).
+Le KPI « Coûts non traités » donne la part des coûts NC + MES par famille en violet ou en orange ; sa note détaille les montants sans action, récurrents, en cours et clôturés. L’analyse détaillée des plans et les recommandations d’organisation sont dans [l’analyse du 29 septembre 2026](../Dashboard%20Pilote%20Machine%20PA/docs/audits/ANALYSE-PLANS-ACTIONS-2026-09-29.md).
+
+## Cache, fiabilité et sécurité
+
+- Les réponses sont mises en cache 6 h (période de l’actualisation automatique). La clé change à chaque publication de `FAITS_IMMO` : aucune donnée périmée n’est servie. Les réponses volumineuses sont découpées en morceaux.
+- À la fin de chaque **Actualiser toutes les données**, les vues Pilotage et NC par défaut sont recalculées (préchauffage).
+- Le suivi des plans MFT et les coûts NC lus en direct sont gardés 30 min ; une copie de secours de 6 h est utilisée si un plan est inaccessible.
+- Le navigateur affiche immédiatement la dernière réponse reçue pour les mêmes filtres, puis la remplace ; une erreur réseau déclenche un nouvel essai automatique.
+- Les fonctions d’écriture (actualisation, import, archivage, actions MFT…) sont réservées aux éditeurs du classeur central, même si elles sont appelées depuis le navigateur.
+- Aucun script hors Google n’est chargé : seuls Google Charts et Google Fonts sont utilisés.
+
+Audit détaillé : [audit du 29 septembre 2026](../Dashboard%20Pilote%20Machine%20PA/docs/audits/AUDIT-2026-09-29-PA-TC.md).
 
 ## Import MES
 

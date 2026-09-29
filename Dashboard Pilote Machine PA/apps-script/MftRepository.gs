@@ -36,6 +36,7 @@ function mftOfficialMeetingsHeaders_() {
 }
 
 function initialiserTableMftOfficielle() {
+  requireSpreadsheetEditor_('initialiserTableMftOfficielle');
   const summary = initializeOfficialMftRepository_();
   SpreadsheetApp.getActive().toast(
     `Table MFT officielle prête : ${summary.actionsImported} action(s), ${summary.followUpsImported} suivi(s) et ${summary.meetingsImported} réunion(s) importés.`,
@@ -212,6 +213,7 @@ function getNormalizedOfficialMftPlan_() {
 }
 
 function configurerClasseurMft() {
+  requireSpreadsheetEditor_('configurerClasseurMft');
   const ui = SpreadsheetApp.getUi();
   const response = ui.prompt(
     'Configurer le classeur MFT PA',

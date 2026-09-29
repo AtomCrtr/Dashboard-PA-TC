@@ -195,29 +195,14 @@ assert.ok(usageGuide.includes('Importer les extractions MES'));
 assert.ok(usageGuide.includes('Actualiser toutes les données'));
 assert.ok(usageGuide.includes('Recharger les données publiées'));
 assert.match(html, /function refreshSources\(\) \{\s*reloadCurrentView\(true\);/);
-assert.match(html, /\.getDashboardData\(readFilters\(\), publishedOnly === true\)/);
-assert.match(html, /\.getSourceAnalysisData\(source, readFilters\(\), publishedOnly === true\)/);
+assert.match(html, /loadWithBrowserCache_\('dashboard', 'getDashboardData', \[readFilters\(\), publishedOnly === true\]/);
+assert.match(html, /'getSourceAnalysisData', \[source, readFilters\(\), publishedOnly === true\]/);
+assert.ok(html.includes('function callServer_('));
 
-const publishedAleaWithoutExternalSource = evaluate(`(() => {
-  const originalRead = readFactsForAnalysis_;
-  const originalDirect = getProductionAleaAnalysisData_;
-  const originalCacheRead = readAnalyticsCache_;
-  const originalCacheWrite = cacheAnalyticsResponse_;
-  readFactsForAnalysis_ = () => ({ headers: APP.factsHeaders.slice(), values: [] });
-  getProductionAleaAnalysisData_ = () => { throw new Error('Source externe ouverte'); };
-  readAnalyticsCache_ = () => null;
-  cacheAnalyticsResponse_ = (_key, value) => value;
-  try {
-    const result = getSourceAnalysisData('ALEA', {}, true);
-    return [result.empty, result.origin.directSource];
-  } finally {
-    readFactsForAnalysis_ = originalRead;
-    getProductionAleaAnalysisData_ = originalDirect;
-    readAnalyticsCache_ = originalCacheRead;
-    cacheAnalyticsResponse_ = originalCacheWrite;
-  }
-})()`);
-assert.deepEqual([...publishedAleaWithoutExternalSource], [true, false]);
+// La page « Analyses Aléas » est supprimée : seule l'analyse NC reste exposée.
+assert.throws(() => evaluate("getSourceAnalysisData('ALEA', {}, true)"), /non prise en charge/);
+assert.ok(!html.includes('data-view="alea"'));
+assert.ok(!html.includes('id="viewAlea"'));
 
 const sourceIds = evaluate(`(() => {
   const originalLock = withScriptLock_;
@@ -333,16 +318,22 @@ const interruptedPublication = evaluate(`(() => {
 assert.deepEqual([...interruptedPublication], [2, '2']);
 
 const directAleaDetails = evaluate(`(() => {
-  const original = readProductionAleaFacts_;
-  readProductionAleaFacts_ = () => ({
+  const originalRead = readFactsForAnalysis_;
+  const originalCacheRead = readAnalyticsCache_;
+  const originalCacheWrite = cacheAnalyticsResponse_;
+  readFactsForAnalysis_ = () => ({
     headers: APP.factsHeaders.slice(),
     values: [APP.factsHeaders.map(header => header === 'SOURCE' ? 'ALEA' : '')]
   });
+  readAnalyticsCache_ = () => null;
+  cacheAnalyticsResponse_ = (_key, value) => value;
   try {
     return getDashboardDetails({ source: 'ALEA', station: [] },
-      { directSource: true, dimension: 'problem', value: 'Non renseigné' }).total;
+      { dimension: 'problem', value: 'Non renseigné' }).total;
   } finally {
-    readProductionAleaFacts_ = original;
+    readFactsForAnalysis_ = originalRead;
+    readAnalyticsCache_ = originalCacheRead;
+    cacheAnalyticsResponse_ = originalCacheWrite;
   }
 })()`);
 assert.equal(directAleaDetails, 1);
@@ -1458,3 +1449,74 @@ assert.equal(evaluate("filterValuesMatch_(['806'], '80', false)"), false);
 assert.equal(evaluate("filterValuesMatch_(['1102309', '1102310'], ['1102310'], true)"), true);
 assert.ok(html.includes('function fillMultiSelect_'));
 console.log('OK — filtres en listes déroulantes validés.');
+
+// Actions MFT liées à une barre (clic → panneau de détail).
+const linkedActions = evaluate(`(() => {
+  const coverage = Object.assign(actionPlanCoverageFromActions_([
+    { ref: '10', immo: '1700002', family: 'FAM-A', action: 'Ancienne', status: 'Fait', closedAt: '2024-01-10', due: '2023-12-01', owner: 'Méthode' },
+    { ref: '11', immo: '1700002', family: 'FAM-A', action: 'Remplacer', status: 'Fait', closedAt: '2026-06-11', due: '2026-06-01', owner: 'Moyens' },
+    { ref: '12', immo: '1700009', family: 'FAM-A', action: 'Former', status: 'En cours', due: '2026-10-30' }
+  ], new Date(2026, 8, 29)), { available: true, complete: true });
+  const rows = annotateActionPlanRows_([{ label: '1700002', cost: 10 }, { label: '1799999', cost: 5 }], 'immo', coverage);
+  const families = annotateActionPlanRows_([{ label: 'FAM-A', cost: 10 }], 'family', coverage);
+  return { immo: rows.map(row => [row.actionPlanStatus, row.actionPlanActions.map(action => action.ref)]), family: families[0].actionPlanActions.map(action => action.ref) };
+})()`);
+assert.deepEqual(linkedActions.immo, [['TERMINEE_RECENTE', ['11', '10']], ['NON_TRAITEE', []]]);
+assert.deepEqual(linkedActions.family, ['12', '11', '10']);
+
+// Cache découpé : une réponse > 95 Ko est stockée en morceaux puis relue à l'identique.
+const chunkedCache = evaluate(`(() => {
+  const store = {};
+  const cache = {
+    get: key => store[key] || null,
+    put: (key, value) => { store[key] = value; },
+    putAll: (entries) => Object.assign(store, entries),
+    getAll: keys => Object.fromEntries(keys.filter(key => key in store).map(key => [key, store[key]])),
+    remove: key => { delete store[key]; }
+  };
+  const value = { rows: Array.from({ length: 4000 }, (_item, index) => ({ id: index, label: 'Famille é ' + index })) };
+  const written = writeJsonCache_(cache, 'big', value, 21600, 'test');
+  const chunks = Object.keys(store).filter(key => key.startsWith('big#')).length;
+  const back = readJsonCache_(cache, 'big', 'test');
+  delete store['big#1'];
+  const missing = readJsonCache_(cache, 'big', 'test');
+  return { written, chunks, same: JSON.stringify(back) === JSON.stringify(value), missing };
+})()`);
+assert.equal(chunkedCache.written, true);
+assert.ok(chunkedCache.chunks > 1);
+assert.equal(chunkedCache.same, true);
+assert.equal(chunkedCache.missing, null);
+assert.equal(evaluate('ANALYTICS_CACHE_SECONDS'), 21600);
+assert.deepEqual(Object.keys(evaluate('defaultPrewarmFilters_()')).sort(), ['family', 'from', 'immo', 'msn', 'source', 'station', 'to']);
+
+// Réseau Workspace : plus de script hors Google, nouveaux éléments d'interface présents.
+assert.ok(!html.includes('unpkg.com'));
+assert.ok(!html.includes('lucide.createIcons'));
+assert.ok(html.includes('id="actionTonePicker"'));
+assert.ok(html.includes('id="detailActions"'));
+assert.ok(html.includes('class="activity-steps"'));
+assert.ok(!html.includes('#c8372d'));
+console.log('OK — plan d’actions, cache et interface validés.');
+
+// Sécurité : fonctions d'écriture réservées aux éditeurs du classeur.
+const editorGuard = evaluate(`(() => {
+  const originalSession = globalThis.Session;
+  const originalSpreadsheet = globalThis.SpreadsheetApp;
+  const user = email => ({ getEmail: () => email });
+  globalThis.SpreadsheetApp = { getActive: () => ({ getOwner: () => user('owner@airbus.com'), getEditors: () => [user('Pilote@Airbus.com')] }) };
+  const attempt = email => {
+    globalThis.Session = Object.assign({}, originalSession, { getActiveUser: () => user(email) });
+    try { requireSpreadsheetEditor_('deleteMftAction'); return 'ok'; } catch (error) { return error.message; }
+  };
+  try {
+    return [attempt('pilote@airbus.com'), attempt(''), attempt('visiteur@airbus.com')];
+  } finally {
+    globalThis.Session = originalSession;
+    globalThis.SpreadsheetApp = originalSpreadsheet;
+  }
+})()`);
+assert.equal(editorGuard[0], 'ok');
+assert.equal(editorGuard[1], 'ok');
+assert.match(editorGuard[2], /réservée aux éditeurs/);
+assert.match(sources[1], /function actualiserTout\(\) \{\r?\n  requireSpreadsheetEditor_\('actualiserTout'\);/);
+console.log('OK — contrôle d’accès des fonctions d’écriture validé.');

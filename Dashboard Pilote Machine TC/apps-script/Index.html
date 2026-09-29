@@ -8,7 +8,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Manrope:wght@600;700&display=swap" rel="stylesheet">
   <script src="https://www.gstatic.com/charts/loader.js"></script>
-  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
   <style>
     :root {
       --ink: #172737;
@@ -595,39 +594,6 @@
     .detail-table th { background: var(--header); }
     .detail-table tr:hover td { background: #edf7f5; }
 
-    .data-flow-panel { padding: 0; overflow: hidden; }
-    .data-flow-panel .panel-head { display: flex; align-items: start; justify-content: space-between; gap: 16px; padding: 20px 21px 17px; }
-    .data-flow-panel .panel-head .panel-title { margin-bottom: 4px; }
-    .flow-badge { flex: 0 0 auto; padding: 6px 9px; border: 1px solid #b8d6d9; border-radius: 6px; background: #edf7f5; color: var(--teal-dark); font-size: 10px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
-    .data-flow-wrap { overflow-x: auto; border-top: 1px solid var(--line); background: #f7faf8; }
-    .data-flow-svg { display: block; width: 100%; min-width: 900px; height: auto; }
-    .data-flow-svg text { font-family: "IBM Plex Sans", sans-serif; fill: var(--ink); }
-    .data-flow-svg .flow-zone-label { font-family: "IBM Plex Sans", sans-serif; }
-    .data-flow-svg .flow-title { font-size: 13px; font-weight: 700; }
-    .data-flow-svg .flow-meta { font-family: "IBM Plex Sans", sans-serif; font-size: 10px; fill: var(--muted); }
-    .data-flow-svg .flow-tag { font-size: 9px; font-weight: 700; letter-spacing: .12em; fill: var(--muted); }
-    .data-flow-svg .flow-node rect { fill: #fff; stroke: #b7ccd1; stroke-width: 1.2; }
-    .data-flow-svg .flow-node.source rect { fill: #f9fcfb; }
-    .data-flow-svg .flow-node.focal rect { fill: #fff2eb; stroke: var(--coral); stroke-width: 1.8; }
-    .data-flow-svg .flow-node.store rect { fill: var(--header); stroke: var(--header); }
-    .data-flow-svg .flow-node.store text { fill: #fff; }
-    .data-flow-svg .flow-node.store .flow-meta, .data-flow-svg .flow-node.store .flow-tag { fill: #b9d9dc; }
-    .data-flow-svg .flow-node.output rect { fill: #eef7f5; stroke: var(--teal); }
-    .data-flow-svg .flow-node.support rect { fill: #fff9ef; stroke: var(--amber); stroke-dasharray: 5 4; }
-    .data-flow-svg .flow-node.support .flow-title { font-size: 11px; }
-    .data-flow-svg .flow-node .flow-mark { fill: var(--teal); }
-    .data-flow-svg .flow-node.focal .flow-mark { fill: var(--coral); }
-    .data-flow-svg .flow-node.store .flow-mark { fill: #9bcdd0; }
-    .data-flow-svg .flow-connector { fill: none; stroke: #75909a; stroke-width: 1.25; marker-end: url(#flow-arrow); }
-    .data-flow-svg .flow-connector.primary { stroke: var(--coral); stroke-width: 1.8; marker-end: url(#flow-arrow-accent); }
-    .data-flow-svg .flow-connector.support { stroke: #a58346; stroke-dasharray: 5 4; marker-end: url(#flow-arrow-muted); }
-    .data-flow-svg .flow-edge-label { font-size: 9px; font-weight: 600; fill: #6b8189; }
-    .data-flow-svg .flow-edge-bg { fill: #f7faf8; opacity: .96; }
-    .data-flow-note { display: flex; flex-wrap: wrap; gap: 9px 18px; padding: 12px 21px 15px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
-    .data-flow-note span { display: inline-flex; align-items: center; gap: 7px; }
-    .data-flow-note span::before { content: ''; width: 18px; height: 2px; background: #75909a; }
-    .data-flow-note span:nth-child(2)::before { background: var(--coral); }
-    .data-flow-note span:nth-child(3)::before { height: 0; border-top: 2px dashed var(--amber); background: transparent; }
 
     .section-heading, .kpis, .dashboard-grid { animation: reveal .45s ease both; }
     .kpis { animation-delay: .05s; }
@@ -636,9 +602,47 @@
     .review-heading:first-of-type { margin-top: 0; }
     .review-cost-controls { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 14px 0; }
     .review-cost-controls p { margin: 0; color: var(--muted); font-size: 12px; }
-    :root { --tone-open: #2f6fb3; --tone-recent: #3f9a5f; --tone-recurring: #f2b27a; --tone-stale: #c8372d; --tone-unknown: #a7b0b1; }
+    .activity-flow { padding: 0; overflow: hidden; }
+    .activity-flow-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 20px 22px 16px; border-bottom: 1px solid var(--line); }
+    .flow-refresh { flex: none; padding: 6px 10px; border: 1px solid #b8d6d9; border-radius: 6px; background: #edf7f5; color: var(--teal-dark); font-size: 11px; font-weight: 600; }
+    .activity-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin: 0; padding: 18px 22px 8px; list-style: none; counter-reset: none; }
+    .activity-step { position: relative; margin-right: 26px; padding: 16px; border: 1px solid var(--line); border-top: 4px solid var(--teal); border-radius: 10px; background: #fff; transition: transform .18s ease, box-shadow .18s ease; }
+    .activity-step:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(18,24,32,.08); }
+    .activity-step:last-child { margin-right: 0; }
+    .activity-step:not(:last-child)::after { content: ''; position: absolute; top: 50%; right: -21px; width: 14px; height: 14px; border-top: 2px solid #8aa3ab; border-right: 2px solid #8aa3ab; transform: translateY(-50%) rotate(45deg); }
+    .activity-step.step-field { border-top-color: #5b8fb9; }
+    .activity-step.step-data { border-top-color: var(--teal); }
+    .activity-step.step-analysis { border-top-color: #d99a4e; }
+    .activity-step.step-decision { border-top-color: #8e7cc3; }
+    .activity-step h4 { margin: 6px 0 4px; font: 700 15px Manrope, sans-serif; color: var(--ink); }
+    .activity-step p { margin: 0 0 10px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .activity-step ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: 12px; color: var(--ink); }
+    .activity-step ul b { font-variant-numeric: tabular-nums; }
+    .step-index { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--canvas); color: var(--ink); font-size: 12px; font-weight: 700; }
+    .step-tones li { display: flex; align-items: center; gap: 7px; }
+    .step-tones span { width: 11px; height: 11px; border-radius: 3px; flex: none; }
+    .step-links { display: grid; gap: 6px; margin-top: 10px; }
+    .step-links button { min-height: 32px; padding: 0 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--canvas); color: var(--teal-dark); font: inherit; font-size: 12px; font-weight: 600; text-align: left; cursor: pointer; }
+    .step-links button:hover { border-color: var(--teal); background: #fff; }
+    .activity-loop { margin: 8px 22px 18px; padding: 10px 12px; border: 1px dashed #b8c9cf; border-radius: 8px; color: var(--muted); font-size: 12px; }
+    @media (max-width: 1100px) {
+      .activity-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+      .activity-step { margin-right: 0; }
+      .activity-step::after { display: none; }
+    }
+    @media (max-width: 640px) {
+      .activity-flow-head { flex-direction: column; padding: 16px; }
+      .activity-steps { grid-template-columns: 1fr; padding: 14px 16px 6px; }
+      .activity-loop { margin: 8px 16px 16px; }
+    }
+    :root { --tone-open: #2f6fb3; --tone-recent: #3f9a5f; --tone-recurring: #f2b27a; --tone-stale: #8e7cc3; --tone-unknown: #a7b0b1; }
     .action-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0 0 14px; padding: 10px 12px; list-style: none; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: 12px; color: var(--muted); }
-    .action-legend li { display: inline-flex; align-items: center; gap: 7px; }
+    .action-legend { align-items: center; }
+    .legend-chip { display: inline-flex; align-items: center; gap: 7px; min-height: 30px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer; transition: opacity .15s ease, border-color .15s ease, box-shadow .15s ease; }
+    .legend-chip:hover { border-color: var(--teal); }
+    .legend-chip[aria-pressed="true"] { border-color: var(--teal-dark); box-shadow: 0 0 0 2px rgba(27,127,137,.14); color: var(--ink); }
+    .legend-chip.inactive { opacity: .42; }
+    .field .multi-select-options .multi-select-swatch { width: 12px; height: 12px; border-radius: 3px; flex: none; }
     .action-legend .swatch { width: 12px; height: 12px; border-radius: 3px; flex: none; }
     .action-legend .tone-open { background: var(--tone-open); }
     .action-legend .tone-recent { background: var(--tone-recent); }
@@ -647,6 +651,18 @@
     .action-legend .tone-unknown { background: var(--tone-unknown); }
     .action-legend b { color: var(--ink); font-variant-numeric: tabular-nums; }
     .action-legend .legend-title { color: var(--ink); font-weight: 600; }
+    .detail-actions { margin: 0 20px 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; }
+    .detail-actions-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; }
+    .detail-action-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .detail-action-list li { padding: 8px 10px; border: 1px solid var(--line); border-left: 4px solid var(--tone-unknown); border-radius: 7px; background: #fff; }
+    .detail-action-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; }
+    .detail-action-status { padding: 2px 8px; border-radius: 999px; color: #fff; font-size: 11px; font-weight: 600; }
+    .detail-action-plan { color: var(--muted); font-size: 11px; }
+    .detail-action-text { margin-top: 4px; font-size: 13px; color: var(--ink); }
+    .detail-action-meta { margin-top: 3px; font-size: 11px; color: var(--muted); }
+    .detail-action-empty { margin: 0 0 8px; font-size: 13px; color: var(--muted); }
+    .detail-actions .detail-filter-button { width: auto; height: auto; min-height: 34px; margin-top: 10px; padding: 6px 14px; font-size: 12px; font-weight: 600; white-space: normal; }
+    .detail-actions-head .multi-select-swatch { width: 12px; height: 12px; border-radius: 3px; flex: none; }
     .review-source-switch { grid-template-columns: repeat(3, minmax(0, 1fr)); width: min(420px, 100%); }
     .review-nc-kpis { grid-template-columns: repeat(3, minmax(150px, 1fr)); max-width: 75%; }
     .review-rule { display: inline-flex; align-items: center; gap: 7px; margin-top: 8px; color: var(--muted); font-size: 12px; }
@@ -692,9 +708,6 @@
       .intro-facts { grid-template-columns: 1fr; gap: 11px; }
       .intro-fact strong { font-size: 17px; }
       .panel { padding: 15px; }
-      .data-flow-panel .panel-head { flex-direction: column; align-items: flex-start; }
-      .data-flow-panel .panel-head { padding: 17px 15px 14px; }
-      .data-flow-note { padding-left: 15px; padding-right: 15px; }
       .panel.chart-focused { inset: 8px; padding: 16px; }
     }
 
@@ -732,7 +745,6 @@
       <nav class="view-switch" id="viewSwitch" aria-label="Navigation">
         <button type="button" class="active" data-view="overview">Synthèse activités</button>
         <button type="button" data-view="dashboard">Pilotage</button>
-        <button type="button" data-view="alea">Analyses Aléas TC</button>
         <button type="button" data-view="nc">Analyses NC TC</button>
       </nav>
       <div class="header-actions">
@@ -765,6 +777,7 @@
           <div class="field"><label for="source">Origine des données</label><select id="source"><option value="">Toutes les sources</option></select></div>
           <div class="field"><label id="immoLabel">IMMO</label><div class="multi-select" id="immoPicker" data-filter="immo" data-all-label="Tous les IMMO"><button type="button" class="multi-select-toggle" aria-haspopup="true" aria-expanded="false" aria-labelledby="immoLabel immoSummary"><span id="immoSummary">Tous les IMMO</span><span class="multi-select-count" hidden></span></button><div class="multi-select-panel" hidden><input type="search" class="multi-select-search" placeholder="Rechercher un IMMO" aria-label="Rechercher un IMMO" autocomplete="off"><div class="multi-select-actions"><button type="button" data-multi-action="all">Tout cocher</button><button type="button" data-multi-action="none">Tout décocher</button></div><div class="multi-select-options" id="immoOptions" role="group" aria-labelledby="immoLabel"></div><button type="button" class="primary multi-select-apply" data-multi-action="apply">Appliquer</button></div></div></div>
           <div class="field"><label id="msnLabel">MSN (avion)</label><div class="multi-select" id="msnPicker" data-filter="msn" data-all-label="Tous les MSN"><button type="button" class="multi-select-toggle" aria-haspopup="true" aria-expanded="false" aria-labelledby="msnLabel msnSummary"><span id="msnSummary">Tous les MSN</span><span class="multi-select-count" hidden></span></button><div class="multi-select-panel" hidden><input type="search" class="multi-select-search" placeholder="Rechercher un MSN" aria-label="Rechercher un MSN" autocomplete="off"><div class="multi-select-actions"><button type="button" data-multi-action="all">Tout cocher</button><button type="button" data-multi-action="none">Tout décocher</button></div><div class="multi-select-options" id="msnOptions" role="group" aria-labelledby="msnLabel"></div><button type="button" class="primary multi-select-apply" data-multi-action="apply">Appliquer</button></div></div></div>
+          <div class="field"><label id="actionToneLabel">Suivi plan d’actions</label><div class="multi-select" id="actionTonePicker" data-filter="actionTone" data-all-label="Tous les suivis" data-apply="local"><button type="button" class="multi-select-toggle" aria-haspopup="true" aria-expanded="false" aria-labelledby="actionToneLabel actionToneSummary"><span id="actionToneSummary">Tous les suivis</span><span class="multi-select-count" hidden></span></button><div class="multi-select-panel" hidden><input type="search" class="multi-select-search" placeholder="Rechercher un suivi" aria-label="Rechercher un suivi" autocomplete="off"><div class="multi-select-actions"><button type="button" data-multi-action="to-review">À traiter en MFT</button><button type="button" data-multi-action="none">Tout décocher</button></div><div class="multi-select-options" id="actionToneOptions" role="group" aria-labelledby="actionToneLabel"></div><button type="button" class="primary multi-select-apply" data-multi-action="apply">Appliquer</button></div></div></div>
           <div class="field"><label for="from">Depuis</label><input id="from" type="date"></div>
           <div class="field"><label for="to">Jusqu’à</label><input id="to" type="date"></div>
           <div class="filter-actions">
@@ -786,7 +799,51 @@
 
       <main id="main-content">
         <div id="viewOverview">
-          <section class="dashboard-grid" id="overviewFlow"></section>
+          <section class="dashboard-grid" id="overviewFlow">
+          <article class="panel wide activity-flow" aria-labelledby="flowTitle">
+            <header class="activity-flow-head">
+              <div><h3 class="panel-title" id="flowTitle">Du terrain à la décision</h3>
+              <p class="panel-subtitle">Chaque aléa ou NC remonté alimente la revue MFT ; chaque décision MFT revient colorer le tableau de bord à l’actualisation suivante (toutes les 6 h).</p></div>
+              <span class="flow-refresh" id="flowRefresh">Données : –</span>
+            </header>
+            <ol class="activity-steps">
+              <li class="activity-step step-field">
+                <span class="step-index">1</span><h4>Terrain</h4><p>Les compagnons et la qualité déclarent.</p>
+                <ul>
+                  <li><b id="flowAleas">–</b> aléas production · Waterspiders · postes P355 / P360 / P370</li>
+                  <li><b id="flowMes">–</b> aléas MES UPA / MEDU · BDD Aléas MES (dossier « MES A DEPOSER »)</li>
+                  <li><b id="flowNc">–</b> NC · feuille « Données NC TC »</li>
+                </ul>
+              </li>
+              <li class="activity-step step-data">
+                <span class="step-index">2</span><h4>Consolidation</h4><p>Apps Script normalise et rattache chaque événement à un IMMO.</p>
+                <ul>
+                  <li>BDD Immo et Famille (master IMMO)</li>
+                  <li>FAITS_IMMO : 24 mois actifs, archives au-delà</li>
+                  <li>Couverture master : <b id="flowCoverage">–</b></li>
+                </ul>
+              </li>
+              <li class="activity-step step-analysis">
+                <span class="step-index">3</span><h4>Analyse</h4><p>Les coûts et les indisponibilités désignent les machines à traiter.</p>
+                <div class="step-links">
+                  <button type="button" data-goto="dashboard">Pilotage · item 1 et item 2 →</button>
+                  <button type="button" data-goto="nc">Analyses NC TC →</button>
+                </div>
+              </li>
+              <li class="activity-step step-decision">
+                <span class="step-index">4</span><h4>Décision MFT</h4><p>Plans MFT TC 370 et 355/360/OSW.</p>
+                <ul class="step-tones">
+                  <li><span style="background:#8e7cc3"></span>Aucune action · <b id="flowToneNone">–</b></li>
+                  <li><span style="background:#f2b27a"></span>Problème qui revient · <b id="flowToneRecurring">–</b></li>
+                  <li><span style="background:#2f6fb3"></span>Action en cours · <b id="flowToneOpen">–</b></li>
+                  <li><span style="background:#3f9a5f"></span>Clôturée &lt; 6 mois · <b id="flowToneDone">–</b></li>
+                </ul>
+                <div class="step-links"><button type="button" data-goto="review-mft">Préparer la réunion MFT →</button></div>
+              </li>
+            </ol>
+            <p class="activity-loop">↺ Les actions décidées sont suivies dans le plan MFT puis relues par le tableau de bord : une machine passe du violet ou de l’orange au bleu, puis au vert.</p>
+          </article>
+          </section>
         </div>
 
         <div id="viewDashboard" style="display:none">
@@ -845,14 +902,14 @@
             <button type="button" data-review-source="COMBINED" aria-pressed="false">NC + MES</button>
           </div>
         </div>
-        <ul class="action-legend" id="actionPlanLegend" aria-label="Légende du suivi plan d’actions">
-          <li class="legend-title">Couleur des barres = suivi dans les plans MFT TC</li>
-          <li><span class="swatch tone-recent" aria-hidden="true"></span>Action clôturée et prise en compte (moins de 6 mois) <b data-action-count="TERMINEE_RECENTE"></b></li>
-          <li><span class="swatch tone-open" aria-hidden="true"></span>Action ouverte / en cours <b data-action-count="EN_COURS"></b></li>
-          <li><span class="swatch tone-recurring" aria-hidden="true"></span>Clôturée depuis plus de 6 mois et le problème revient <b data-action-count="CLOTUREE_ANCIENNE"></b></li>
-          <li><span class="swatch tone-stale" aria-hidden="true"></span>Aucune action (non prise en compte, reportée ou abandonnée) <b data-action-count="NON_TRAITEE"></b></li>
-          <li><span class="swatch tone-unknown" aria-hidden="true"></span>Suivi indisponible</li>
-        </ul>
+        <div class="action-legend" id="actionPlanLegend" role="group" aria-label="Légende et filtre du suivi plan d’actions">
+          <span class="legend-title">Couleur des barres = suivi dans les plans MFT TC · cliquez pour filtrer</span>
+          <button type="button" class="legend-chip" data-tone="TERMINEE_RECENTE" aria-pressed="false"><span class="swatch tone-recent" aria-hidden="true"></span>Clôturée et prise en compte (&lt; 6 mois) <b data-action-count="TERMINEE_RECENTE"></b></button>
+          <button type="button" class="legend-chip" data-tone="EN_COURS" aria-pressed="false"><span class="swatch tone-open" aria-hidden="true"></span>Ouverte / en cours <b data-action-count="EN_COURS"></b></button>
+          <button type="button" class="legend-chip" data-tone="CLOTUREE_ANCIENNE" aria-pressed="false"><span class="swatch tone-recurring" aria-hidden="true"></span>Clôturée +6 mois, le problème revient <b data-action-count="CLOTUREE_ANCIENNE"></b></button>
+          <button type="button" class="legend-chip" data-tone="NON_TRAITEE" aria-pressed="false"><span class="swatch tone-stale" aria-hidden="true"></span>Aucune action <b data-action-count="NON_TRAITEE"></b></button>
+          <button type="button" class="legend-chip" data-tone="INCONNU" aria-pressed="false"><span class="swatch tone-unknown" aria-hidden="true"></span>Suivi indisponible</button>
+        </div>
         <section class="dashboard-grid" id="reviewDashboard">
           <article class="panel"><h3 class="panel-title" id="reviewFamilyCostTitle">Coût des NC par famille</h3><p class="panel-subtitle" id="reviewFamilyCostSubtitle">Axe X = famille · axe Y = coût estimé en euros</p><div class="chart tall" id="reviewFamilyCostChart"></div></article>
           <article class="panel"><h3 class="panel-title" id="reviewImmoCostTitle">Coût des NC par IMMO</h3><p class="panel-subtitle" id="reviewImmoCostSubtitle">NC dont l’IMMO est renseigné · coût selon les données disponibles</p><div class="chart tall" id="reviewImmoCostChart"></div></article>
@@ -861,54 +918,6 @@
         </section>
 
         <section class="dashboard-grid" id="dashboard" hidden>
-          <article class="panel wide data-flow-panel" aria-labelledby="flowTitle">
-            <div class="panel-head">
-              <div><h3 class="panel-title" id="flowTitle">Du terrain à la décision</h3><p class="panel-subtitle">Les sources sont normalisées, filtrées et regroupées avant d’alimenter les analyses.</p></div>
-              <span class="flow-badge">Flux de données</span>
-            </div>
-            <div class="data-flow-wrap">
-              <svg class="data-flow-svg" viewBox="0 0 1160 342" role="img" aria-labelledby="flowSvgTitle flowSvgDescription">
-                <title id="flowSvgTitle">Flux des données du dashboard machine</title>
-                <desc id="flowSvgDescription">Les sources master, production, NC et MES passent par Apps Script, sont consolidées dans FAITS_IMMO puis alimentent le pilotage et les analyses.</desc>
-                <defs>
-                  <marker id="flow-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#75909a"></polygon></marker>
-                  <marker id="flow-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#d56f56"></polygon></marker>
-                  <marker id="flow-arrow-muted" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#a58346"></polygon></marker>
-                </defs>
-                <rect class="flow-zone" x="300" y="28" width="500" height="278" rx="8" fill="#f0f7f5" stroke="#b9d2d1"></rect>
-                <text class="flow-zone-label" x="320" y="48" font-size="9" font-weight="700" letter-spacing="1.4" fill="#627789">PLATEFORME DE PILOTAGE</text>
-
-                <path class="flow-connector" d="M248 81 H300 V124 H352"></path>
-                <path class="flow-connector" d="M248 146 H318 V138 H352"></path>
-                <path class="flow-connector" d="M248 211 H318 V152 H352"></path>
-                <path class="flow-connector" d="M248 276 H300 V166 H352"></path>
-                <path class="flow-connector primary" d="M548 142 H576"></path>
-                <path class="flow-connector" d="M776 142 H806 V117 H858"></path>
-                <path class="flow-connector" d="M776 142 H806 V207 H858"></path>
-                <path class="flow-connector support" d="M450 180 V214 H450 V231"></path>
-                <path class="flow-connector support" d="M674 180 V214 H674 V231"></path>
-
-                <rect class="flow-edge-bg" x="253" y="68" width="50" height="18" rx="4"></rect><text class="flow-edge-label" x="260" y="80">ENTRÉE</text>
-                <rect class="flow-edge-bg" x="548" y="82" width="63" height="18" rx="4"></rect><text class="flow-edge-label" x="555" y="94">ÉCRITURE</text>
-                <rect class="flow-edge-bg" x="784" y="87" width="53" height="18" rx="4"></rect><text class="flow-edge-label" x="791" y="99">LECTURE</text>
-                <rect class="flow-edge-bg" x="444" y="204" width="66" height="18" rx="4"></rect><text class="flow-edge-label" x="451" y="216">CONTRÔLE</text>
-
-                <g class="flow-node source" transform="translate(28 56)"><rect width="220" height="50" rx="6"></rect><circle class="flow-mark" cx="18" cy="25" r="7"></circle><text class="flow-tag" x="34" y="19">RÉFÉRENTIEL</text><text class="flow-title" x="34" y="36">BDD Immo et Famille</text></g>
-                <g class="flow-node source" transform="translate(28 121)"><rect width="220" height="50" rx="6"></rect><circle class="flow-mark" cx="18" cy="25" r="7"></circle><text class="flow-tag" x="34" y="19">TERRAIN</text><text class="flow-title" x="34" y="36">Waterspiders</text></g>
-                <g class="flow-node source" transform="translate(28 186)"><rect width="220" height="50" rx="6"></rect><circle class="flow-mark" cx="18" cy="25" r="7"></circle><text class="flow-tag" x="34" y="19">QUALITÉ</text><text class="flow-title" x="34" y="36">Données NC TC</text></g>
-                <g class="flow-node source" transform="translate(28 251)"><rect width="220" height="50" rx="6"></rect><circle class="flow-mark" cx="18" cy="25" r="7"></circle><text class="flow-tag" x="34" y="19">IMPORT</text><text class="flow-title" x="34" y="36">BDD Aléas MES</text></g>
-
-                <g class="flow-node focal" transform="translate(352 104)"><rect width="196" height="76" rx="7"></rect><circle class="flow-mark" cx="20" cy="28" r="8"></circle><text class="flow-tag" x="38" y="25">TRANSFORMATION</text><text class="flow-title" x="18" y="51">Apps Script</text><text class="flow-meta" x="18" y="66">normalise · filtre · rapproche</text></g>
-                <g class="flow-node store" transform="translate(576 104)"><rect width="200" height="76" rx="7"></rect><circle class="flow-mark" cx="20" cy="28" r="8"></circle><text class="flow-tag" x="38" y="25">TABLE CENTRALE</text><text class="flow-title" x="18" y="51">FAITS_IMMO</text><text class="flow-meta" x="18" y="66">faits actifs · 24 mois</text></g>
-                <g class="flow-node support" transform="translate(352 231)"><rect width="196" height="45" rx="6"></rect><text class="flow-tag" x="16" y="19">QUALITÉ</text><text class="flow-title" x="16" y="35">CONTROLES</text></g>
-                <g class="flow-node support" transform="translate(576 231)"><rect width="200" height="45" rx="6"></rect><text class="flow-tag" x="16" y="19">RÉTENTION</text><text class="flow-title" x="16" y="35">FAITS_IMMO_ARCHIVES</text></g>
-
-                <g class="flow-node output" transform="translate(858 92)"><rect width="274" height="50" rx="6"></rect><circle class="flow-mark" cx="18" cy="25" r="7"></circle><text class="flow-tag" x="34" y="19">REVUE TC</text><text class="flow-title" x="34" y="36">Pilotage disponibilité · coûts</text></g>
-                <g class="flow-node output" transform="translate(858 182)"><rect width="274" height="50" rx="6"></rect><circle class="flow-mark" cx="18" cy="25" r="7"></circle><text class="flow-tag" x="34" y="19">ANALYSES TERRAIN</text><text class="flow-title" x="34" y="36">Aléas TC · NC TC · MSN</text></g>
-              </svg>
-            </div>
-            <div class="data-flow-note"><span>Référentiel et événements métier</span><span>Consolidation commune par IMMO</span><span>Contrôles et archivage séparés</span></div>
-          </article>
           <article class="panel wide"><h3 class="panel-title">Évolution hebdomadaire des défauts</h3><p class="panel-subtitle" id="trendSubtitle">Aléas production, non-conformités et extractions MES assemblés</p><div class="chart" id="trendChart"></div></article>
           <article class="panel"><h3 class="panel-title">Pareto des IMMO</h3><p class="panel-subtitle" id="machineSubtitle">Top 10 en première vue, classé par nombre d’impacts machine</p><div class="chart tall" id="machineChart"></div><button class="ranking-toggle" id="machineRemainderToggle" type="button" hidden></button><div class="machine-remainder" id="machineRemainder" hidden></div></article>
           <article class="panel"><h3 class="panel-title">Temps perdu par famille de machine</h3><p class="panel-subtitle">Heures perdues cumulées par famille, toutes sources confondues</p><div class="chart tall" id="downtimeFamilyChart"></div></article>
@@ -949,25 +958,6 @@
               <p class="panel-subtitle">Les erreurs de lecture ou de classification restent visibles ici.</p>
               <div id="qualityImportAudit"></div>
             </article>
-          </section>
-        </div>
-
-        <div id="viewAlea" style="display:none">
-          <div class="section-heading"><div><h2>Analyses Aléas machines de perçage</h2><p id="aleaScopeLabel">Chargement des aléas des machines de perçage TC</p></div></div>
-          <section class="kpis" aria-label="Indicateurs aléas TC">
-            <article class="kpi alea"><div class="kpi-label">Aléas</div><div class="kpi-value" id="aleaTotal">–</div><div class="kpi-note" id="aleaDeclarations">– déclarations</div></article>
-            <article class="kpi"><div class="kpi-label">IMMO touchés</div><div class="kpi-value" id="aleaMachines">–</div><div class="kpi-note" id="aleaFamilies">– familles</div></article>
-            <article class="kpi recurrence"><div class="kpi-label">IMMO récurrents</div><div class="kpi-value" id="aleaRecurrent">–</div><div class="kpi-note" id="aleaTopFive">Top 5 = –</div></article>
-            <article class="kpi quality"><div class="kpi-label">Couverture master</div><div class="kpi-value" id="aleaCoverage">–</div><div class="kpi-note" id="aleaMsn">Activité MSN indisponible</div></article>
-          </section>
-          <section class="dashboard-grid">
-            <article class="panel wide"><h3 class="panel-title">Tendance hebdomadaire des aléas</h3><p class="panel-subtitle">Volumes aléas production, selon les filtres sélectionnés</p><div class="chart" id="aleaTrendChart"></div></article>
-            <article class="panel"><h3 class="panel-title">Top des aléas</h3><p class="panel-subtitle">Classement par nombre d’occurrences</p><div class="chart tall" id="aleaProblemChart"></div></article>
-            <article class="panel"><h3 class="panel-title">Pareto des IMMO</h3><p class="panel-subtitle">Machines les plus impactées</p><div class="chart tall" id="aleaMachineChart"></div></article>
-            <article class="panel wide"><h3 class="panel-title">Aléas par famille et taux de perçage</h3><p class="panel-subtitle">Barres = aléas ; courbe = aléas / 1 000 perçages</p><div class="chart" id="aleaFamilyChart"></div></article>
-            <article class="panel"><h3 class="panel-title">Répartition par type de machine</h3><p class="panel-subtitle">Types renseignés dans les remontées aléas</p><div class="chart" id="aleaStationChart"></div></article>
-            <article class="panel"><h3 class="panel-title">Répartition par catégorie</h3><p class="panel-subtitle">Outil, perçage, machine…</p><div class="chart" id="aleaCategoryChart"></div></article>
-            <article class="panel wide"><h3 class="panel-title">Historique des aléas</h3><p class="panel-subtitle">20 événements les plus récents, extensible jusqu’à 100</p><div class="detail-table-wrap" id="aleaDetails"></div></article>
           </section>
         </div>
 
@@ -1030,6 +1020,7 @@
       <div><h2 id="detailTitle">Détail des événements</h2><p id="detailSummary">Sélectionnez un élément du graphique</p></div>
       <button class="detail-close" id="detailClose" type="button" title="Fermer" aria-label="Fermer le détail"><i data-lucide="x"></i></button>
     </header>
+    <section class="detail-actions" id="detailActions" hidden aria-label="Actions MFT liées"></section>
     <div class="detail-tools"><input class="detail-search" id="detailSearch" type="search" placeholder="Rechercher dans les résultats" aria-label="Rechercher dans les résultats"></div>
     <div class="detail-table-wrap" id="detailTableWrap"></div>
   </aside>
@@ -1039,12 +1030,35 @@
     google.charts.load('current', { packages: ['corechart', 'bar'] });
     google.charts.setOnLoadCallback(loadDashboard);
     document.addEventListener('DOMContentLoaded', () => {
-      if (window.lucide) lucide.createIcons();
-      document.getElementById('overviewFlow').appendChild(document.querySelector('.data-flow-panel'));
+      renderIcons_();
       document.getElementById('filters').addEventListener('submit', event => { event.preventDefault(); reloadCurrentView(); });
       document.getElementById('filters').addEventListener('input', updateActiveFilterCount_);
       document.getElementById('filters').addEventListener('change', updateActiveFilterCount_);
       initMultiSelects_();
+      document.getElementById('overviewFlow').addEventListener('click', event => {
+        const target = event.target.closest('[data-goto]');
+        if (!target) return;
+        if (target.dataset.goto === 'review-mft') {
+          setMultiSelectValues_('actionTone', ACTION_TONES_TO_REVIEW);
+          syncActionLegend_();
+          updateActiveFilterCount_();
+          switchView('dashboard');
+          requestAnimationFrame(() => { const legend = document.getElementById('actionPlanLegend'); if (legend) legend.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+          return;
+        }
+        switchView(target.dataset.goto);
+      });
+      fillMultiSelect_('actionTone', ACTION_TONES.map(tone => tone.value),
+        value => (ACTION_TONES.find(tone => tone.value === value) || {}).label || value,
+        value => (ACTION_TONES.find(tone => tone.value === value) || {}).color || '#a7b0b1');
+      document.getElementById('actionPlanLegend').addEventListener('click', event => {
+        const chip = event.target.closest('[data-tone]');
+        if (!chip) return;
+        const tones = new Set(selectedActionTones_());
+        if (tones.has(chip.dataset.tone)) tones.delete(chip.dataset.tone); else tones.add(chip.dataset.tone);
+        setMultiSelectValues_('actionTone', [...tones]);
+        applyActionToneFilter_();
+      });
       document.getElementById('filterToggle').addEventListener('click', toggleFiltersPanel_);
       document.getElementById('reset').addEventListener('click', resetFilters);
       document.getElementById('refreshData').addEventListener('click', refreshSources);
@@ -1102,7 +1116,7 @@
           });
           if (widthChanged) redrawOnWidthChange();
         });
-        ['viewOverview', 'viewDashboard', 'viewAlea', 'viewNc'].forEach(id => {
+        ['viewOverview', 'viewDashboard', 'viewNc'].forEach(id => {
           const view = document.getElementById(id);
           if (view) observer.observe(view);
         });
@@ -1127,7 +1141,7 @@
         panel.classList.add('has-chart-control');
         panel.appendChild(button);
       });
-      if (window.lucide) lucide.createIcons();
+      renderIcons_();
     }
 
     function toggleChartFocus_(panel, button) {
@@ -1142,7 +1156,7 @@
       button.setAttribute('aria-label', 'Réduire le graphique');
       button.setAttribute('aria-pressed', 'true');
       button.innerHTML = '<i data-lucide="minimize-2"></i>';
-      if (window.lucide) lucide.createIcons();
+      renderIcons_();
       button.focus();
       setTimeout(redrawActiveView_, 80);
     }
@@ -1159,7 +1173,7 @@
       button.setAttribute('aria-label', `Agrandir ${title ? title.textContent : 'le graphique'}`);
       button.setAttribute('aria-pressed', 'false');
       button.innerHTML = '<i data-lucide="maximize-2"></i>';
-      if (window.lucide) lucide.createIcons();
+      renderIcons_();
       setTimeout(redrawActiveView_, 80);
       if (window.chartFocusReturn_) window.chartFocusReturn_.focus();
       window.chartFocusReturn_ = null;
@@ -1174,7 +1188,7 @@
       toggle.title = collapsed ? 'Épingler les filtres ouverts' : 'Replier les filtres';
       toggle.setAttribute('aria-label', `${toggle.title}${activeCount ? ` · ${activeCount} filtre(s) actif(s)` : ''}`);
       toggle.innerHTML = `<i data-lucide="${collapsed ? 'panel-left-open' : 'panel-left-close'}"></i><span class="filter-active-count" id="filterActiveCount"${activeCount ? '' : ' hidden'}>${activeCount}</span>`;
-      if (window.lucide) lucide.createIcons({ nodes: [toggle] });
+      renderIcons_(toggle);
       if (persist) {
         try { localStorage.setItem('dashboard-filters-collapsed', String(collapsed)); } catch (_error) {}
       }
@@ -1192,12 +1206,82 @@
       setFiltersPanelCollapsed_(collapsed, false);
     }
 
+    // Fiabilité : la dernière réponse reçue pour les mêmes filtres est affichée immédiatement
+    // depuis le navigateur (6 h maximum, période de l'actualisation automatique), puis remplacée
+    // par la réponse du serveur. Une réponse arrivée après un nouveau changement de filtres est ignorée.
+    const BROWSER_CACHE_PREFIX = 'dashboard-cache-v1:';
+    const BROWSER_CACHE_MAX_AGE = 6 * 3600 * 1000;
+    const BROWSER_CACHE_MAX_ENTRIES = 6;
+    const serverRequestTokens_ = {};
+
+    function browserCacheRead_(key) {
+      try {
+        const entry = JSON.parse(localStorage.getItem(BROWSER_CACHE_PREFIX + key) || 'null');
+        return entry && Date.now() - entry.savedAt < BROWSER_CACHE_MAX_AGE ? entry : null;
+      } catch (_error) {
+        return null;
+      }
+    }
+
+    function browserCacheWrite_(key, data) {
+      try {
+        const serialized = JSON.stringify({ savedAt: Date.now(), data });
+        if (serialized.length > 1500000) return;
+        localStorage.setItem(BROWSER_CACHE_PREFIX + key, serialized);
+        const entries = Object.keys(localStorage)
+          .filter(name => name.startsWith(BROWSER_CACHE_PREFIX))
+          .map(name => ({ name, savedAt: (JSON.parse(localStorage.getItem(name) || '{}').savedAt) || 0 }))
+          .sort((left, right) => right.savedAt - left.savedAt);
+        entries.slice(BROWSER_CACHE_MAX_ENTRIES).forEach(entry => localStorage.removeItem(entry.name));
+      } catch (_error) {
+        // Stockage plein ou désactivé : le dashboard fonctionne sans copie locale.
+      }
+    }
+
+    function isTransientServerError_(error) {
+      const message = error && error.message ? error.message : String(error || '');
+      return /network|réseau|timed? ?out|délai|exceeded|dépass|service|unavailable|indisponible|failed to fetch|NetworkError|interrompu/i.test(message);
+    }
+
+    // Appel serveur avec un nouvel essai automatique si l'erreur semble passagère (réseau, quota).
+    function callServer_(channel, method, args, onSuccess, onFailure) {
+      const token = (serverRequestTokens_[channel] || 0) + 1;
+      serverRequestTokens_[channel] = token;
+      let attempts = 0;
+      const run = () => {
+        google.script.run
+          .withSuccessHandler(result => { if (serverRequestTokens_[channel] === token) onSuccess(result); })
+          .withFailureHandler(error => {
+            if (serverRequestTokens_[channel] !== token) return;
+            attempts += 1;
+            if (attempts < 2 && isTransientServerError_(error)) { setTimeout(run, 1500); return; }
+            onFailure(error);
+          })[method](...args);
+      };
+      run();
+    }
+
+    function loadWithBrowserCache_(channel, method, args, render, loadingLabel) {
+      const cacheKey = `${channel}:${JSON.stringify(args)}`;
+      const cached = browserCacheRead_(cacheKey);
+      if (cached) {
+        render(cached.data);
+        setLoading(true, `Copie du ${formatDateTime(new Date(cached.savedAt).toISOString())} affichée · mise à jour…`);
+      } else {
+        setLoading(true, loadingLabel);
+      }
+      callServer_(channel, method, args, data => {
+        browserCacheWrite_(cacheKey, data);
+        render(data);
+      }, error => {
+        if (!cached) { showError(error); return; }
+        setLoading(false);
+        document.getElementById('refreshState').textContent = `Serveur indisponible · copie du ${formatDateTime(new Date(cached.savedAt).toISOString())}`;
+      });
+    }
+
     function loadDashboard(publishedOnly = false) {
-      setLoading(true);
-      google.script.run
-        .withSuccessHandler(renderDashboard)
-        .withFailureHandler(showError)
-        .getDashboardData(readFilters(), publishedOnly === true);
+      loadWithBrowserCache_('dashboard', 'getDashboardData', [readFilters(), publishedOnly === true], renderDashboard);
     }
 
     function loadDataQuality() {
@@ -1210,17 +1294,13 @@
 
     function reloadCurrentView(publishedOnly = false) {
       const active = document.querySelector('#viewSwitch button.active').dataset.view;
-      if (active === 'alea') return loadSourceAnalysis('ALEA', publishedOnly === true);
       if (active === 'nc') return loadSourceAnalysis('NC', publishedOnly === true);
       return loadDashboard(publishedOnly === true);
     }
 
     function loadSourceAnalysis(source, publishedOnly = false) {
-      setLoading(true, `Chargement de l’analyse ${source === 'ALEA' ? 'aléas' : 'NC'}…`);
-      google.script.run
-        .withSuccessHandler(data => renderSourceAnalysis(source, data))
-        .withFailureHandler(showError)
-        .getSourceAnalysisData(source, readFilters(), publishedOnly === true);
+      loadWithBrowserCache_(`source-${source}`, 'getSourceAnalysisData', [source, readFilters(), publishedOnly === true],
+        data => renderSourceAnalysis(source, data), 'Chargement de l’analyse NC…');
     }
 
     function loadCombinedAlea() {
@@ -1241,10 +1321,8 @@
       });
       document.getElementById('viewOverview').style.display = view === 'overview' ? '' : 'none';
       document.getElementById('viewDashboard').style.display = view === 'dashboard' ? '' : 'none';
-      document.getElementById('viewAlea').style.display = view === 'alea' ? '' : 'none';
       document.getElementById('viewNc').style.display = view === 'nc' ? '' : 'none';
       configureSourceFilterForView_(view, previousView);
-      if (view === 'alea') loadSourceAnalysis('ALEA');
       if (view === 'nc') loadSourceAnalysis('NC');
       requestAnimationFrame(() => redrawActiveView_());
       setTimeout(() => redrawActiveView_(), 120);
@@ -1256,7 +1334,7 @@
       if (previousView === 'overview' || previousView === 'dashboard') {
         window.sharedSourceFilter_ = sourceFilter.value;
       }
-      const fixedSources = { alea: 'ALEA', nc: 'NC' };
+      const fixedSources = { nc: 'NC' };
       if (Object.prototype.hasOwnProperty.call(fixedSources, view)) {
         sourceFilter.value = fixedSources[view];
         sourceFilter.disabled = true;
@@ -1272,7 +1350,6 @@
     function redrawActiveView_() {
       const active = activeView_();
       if (active === 'dashboard' && window.currentData) drawChartsWhenReady(window.currentData);
-      if (active === 'alea' && window.currentSourceData && window.currentSourceData.ALEA) drawSourceChartsWhenReady('ALEA', window.currentSourceData.ALEA);
       if (active === 'nc' && window.currentSourceData && window.currentSourceData.NC) drawSourceChartsWhenReady('NC', window.currentSourceData.NC);
     }
 
@@ -1371,6 +1448,7 @@
       document.getElementById('familySubtitle').textContent = `Barres = impacts par famille de machine · courbe = impacts pour 1 000 perçages, pas un %`;
       renderMachineRemainder_(data.machines || []);
       document.getElementById('scopeLabel').textContent = scopeText();
+      renderOverviewFlow_(data);
       if (data.empty) {
         showChartMessage(data.message, 'empty');
         return;
@@ -1791,7 +1869,7 @@
       const prefix = source === 'ALEA' ? 'alea' : 'nc';
       const palette = chartColors_();
       const color = source === 'ALEA' ? palette.alea : palette.nc;
-      const common = { backgroundColor: 'transparent', fontName: 'IBM Plex Sans', legend: 'none', chartArea: { left: 75, top: 25, right: 20, bottom: 65 } };
+      const common = { backgroundColor: 'transparent', fontName: 'IBM Plex Sans', legend: 'none', animation: { startup: true, duration: 380, easing: 'out' }, chartArea: { left: 75, top: 25, right: 20, bottom: 65 } };
       const typedData = (columns, rows) => {
         const table = new google.visualization.DataTable();
         columns.forEach(column => table.addColumn(column));
@@ -1996,6 +2074,7 @@
         backgroundColor: 'transparent',
         fontName: 'IBM Plex Sans',
         chartArea: { left: 56, top: 22, right: 20, bottom: 45 },
+        animation: { startup: true, duration: 380, easing: 'out' },
         legend: { position: 'top', alignment: 'end', textStyle: { color: '#5b6b7d', fontSize: 11 } },
         colors: [palette.alea, palette.nc, palette.mes]
       };
@@ -2009,7 +2088,7 @@
         EN_COURS: { color: '#2f6fb3', label: 'action ouverte / en cours' },
         TERMINEE_RECENTE: { color: '#3f9a5f', label: 'action clôturée et prise en compte (moins de 6 mois)' },
         CLOTUREE_ANCIENNE: { color: '#f2b27a', label: 'action clôturée depuis plus de 6 mois, le problème revient' },
-        NON_TRAITEE: { color: '#c8372d', label: 'aucune action (non prise en compte, reportée ou abandonnée)' },
+        NON_TRAITEE: { color: '#8e7cc3', label: 'aucune action (non prise en compte, reportée ou abandonnée)' },
         INCONNU: { color: '#a7b0b1', label: 'suivi indisponible' }
       };
       const actionPlanBarColor = status => (actionPlanTones[status] || actionPlanTones.INCONNU).color;
@@ -2045,9 +2124,10 @@
       const drawColumns = (id, rows, label, valueKey, color, selection, source, config = {}) => {
         const target = document.getElementById(id);
         const visibleRows = (rows || []).filter(item => Number(item[valueKey]) > 0
-          && (id !== 'reviewFamilyCostChart' || isUsableFamilyLabel(item.label)));
+          && (id !== 'reviewFamilyCostChart' || isUsableFamilyLabel(item.label))
+          && actionToneVisible_(item));
         target.style.width = '';
-        if (!visibleRows.length) { drawEmpty(id, 'Aucune donnée disponible pour cette période'); return; }
+        if (!visibleRows.length) { drawEmpty(id, selectedActionTones_().length ? 'Aucune barre pour ce suivi de plan d’actions' : 'Aucune donnée disponible pour cette période'); return; }
         const width = chartWidth_(id);
         const chartWidth = config.horizontalScroll ? Math.max(width, visibleRows.length * 180) : width;
         if (config.horizontalScroll) target.style.width = `${chartWidth}px`;
@@ -2074,8 +2154,8 @@
       };
 
       const drawImmoCosts = (id, rows, title, color, source) => {
-        const visibleRows = (rows || []).filter(item => Number(item.cost) > 0);
-        if (!visibleRows.length) { drawEmpty(id, 'Aucun coût avec IMMO renseigné pour cette période'); return; }
+        const visibleRows = (rows || []).filter(item => Number(item.cost) > 0 && actionToneVisible_(item));
+        if (!visibleRows.length) { drawEmpty(id, selectedActionTones_().length ? 'Aucun IMMO pour ce suivi de plan d’actions' : 'Aucun coût avec IMMO renseigné pour cette période'); return; }
         const table = typedData([
           { type: 'string', label: 'IMMO' },
           { type: 'number', label: 'Coût estimé (€)' },
@@ -2154,6 +2234,7 @@
         backgroundColor: 'transparent',
         fontName: 'IBM Plex Sans',
         chartArea: { left: 56, top: 22, right: 20, bottom: 45 },
+        animation: { startup: true, duration: 380, easing: 'out' },
         legend: { position: 'top', alignment: 'end', textStyle: { color: '#5b6b7d', fontSize: 11 } },
         colors: [palette.alea, palette.nc, palette.mes]
       };
@@ -2277,7 +2358,8 @@
       google.visualization.events.addListener(chart, 'select', () => {
         const selection = chart.getSelection()[0];
         if (!selection || selection.row === null || selection.row === undefined || !rows[selection.row]) return;
-        openDetails(selectionForRow(rows[selection.row]));
+        const row = rows[selection.row];
+        openDetails(Object.assign({ actionPlanStatus: row.actionPlanStatus, actionPlanActions: row.actionPlanActions }, selectionForRow(row)));
       });
     }
 
@@ -2285,12 +2367,73 @@
       google.visualization.events.addListener(chart, 'select', () => {
         const selection = chart.getSelection()[0];
         if (!selection || selection.row === null || selection.row === undefined || !rows[selection.row]) return;
-        const origin = window.currentSourceData && window.currentSourceData[source] && window.currentSourceData[source].origin;
-        openDetails(Object.assign({ source, directSource: source === 'ALEA' && activeView_() === 'alea' && Boolean(origin && origin.directSource) }, selectionForRow(rows[selection.row])));
+        const row = rows[selection.row];
+        openDetails(Object.assign({ source, actionPlanStatus: row.actionPlanStatus, actionPlanActions: row.actionPlanActions }, selectionForRow(row)));
       });
     }
 
+    const DETAIL_FILTER_KEYS = { family: 'family', immo: 'immo', station: 'station', msn: 'msn' };
+
+    function renderDetailActions_(selection) {
+      const container = document.getElementById('detailActions');
+      const actions = Array.isArray(selection.actionPlanActions) ? selection.actionPlanActions : [];
+      const filterKey = DETAIL_FILTER_KEYS[selection.dimension];
+      if (!actions.length && !selection.actionPlanStatus && !filterKey) { container.hidden = true; container.replaceChildren(); return; }
+      container.hidden = false;
+      const nodes = [];
+      if (selection.actionPlanStatus) {
+        const tone = ACTION_TONES.find(item => item.value === selection.actionPlanStatus) || ACTION_TONES[ACTION_TONES.length - 1];
+        const head = document.createElement('div');
+        head.className = 'detail-actions-head';
+        head.innerHTML = `<span class="multi-select-swatch" style="background:${tone.color}"></span><strong>Plan d’actions MFT :</strong> ${escapeHtml(tone.label)}`;
+        nodes.push(head);
+      }
+      if (actions.length) {
+        const list = document.createElement('ul');
+        list.className = 'detail-action-list';
+        actions.forEach(action => {
+          const item = document.createElement('li');
+          const tone = ACTION_TONES.find(entry => entry.value === action.tone) || ACTION_TONES[ACTION_TONES.length - 1];
+          const dates = [action.due ? `échéance ${formatActionDate_(action.due)}` : '', action.closedAt ? `clôturée le ${formatActionDate_(action.closedAt)}` : ''].filter(Boolean).join(' · ');
+          item.style.borderLeftColor = tone.color;
+          item.innerHTML = `<div class="detail-action-top"><strong>${escapeHtml(action.ref ? `Réf. ${action.ref}` : 'Action')}</strong>`
+            + `<span class="detail-action-status" style="background:${tone.color}">${escapeHtml(action.status || '')}</span>`
+            + `${action.plan ? `<span class="detail-action-plan">${escapeHtml(action.plan)}</span>` : ''}</div>`
+            + `<div class="detail-action-text">${escapeHtml(action.action || '')}</div>`
+            + `<div class="detail-action-meta">${escapeHtml([action.issue, action.owner, dates].filter(Boolean).join(' · '))}</div>`;
+          list.appendChild(item);
+        });
+        nodes.push(list);
+      } else if (selection.actionPlanStatus) {
+        const empty = document.createElement('p');
+        empty.className = 'detail-action-empty';
+        empty.textContent = selection.actionPlanStatus === 'INCONNU'
+          ? 'Le plan d’actions n’a pas pu être lu.'
+          : 'Aucune action MFT trouvée pour cet élément : à proposer en réunion MFT.';
+        nodes.push(empty);
+      }
+      if (filterKey && selection.value) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'secondary detail-filter-button';
+        button.textContent = `Filtrer tout le tableau de bord sur « ${selection.value} »`;
+        button.addEventListener('click', () => {
+          setMultiSelectValues_(filterKey, [String(selection.value)]);
+          closeDetails();
+          updateActiveFilterCount_();
+          reloadCurrentView();
+        });
+        nodes.push(button);
+      }
+      container.replaceChildren(...nodes);
+    }
+
+    function formatActionDate_(value) {
+      return /^\d{4}-\d{2}-\d{2}$/.test(String(value)) ? formatInputDate(value) : String(value);
+    }
+
     function openDetails(selection) {
+      renderDetailActions_(selection);
       document.body.classList.add('detail-open');
       document.getElementById('detailDrawer').setAttribute('aria-hidden', 'false');
       document.getElementById('detailTitle').textContent = selection.title;
@@ -2309,7 +2452,15 @@
           document.getElementById('detailSummary').textContent = 'Erreur de chargement';
           document.getElementById('detailTableWrap').textContent = message;
         })
-        .getDashboardDetails(Object.assign({}, readFilters(), selection.source ? { source: selection.source } : {}), selection);
+        .getDashboardDetails(Object.assign({}, readFilters(), selection.source ? { source: selection.source } : {}), serverSelection_(selection));
+    }
+
+    // Les actions MFT ne servent qu'à l'affichage : elles ne sont pas envoyées au serveur (clé de cache stable).
+    function serverSelection_(selection) {
+      const copy = Object.assign({}, selection);
+      delete copy.actionPlanActions;
+      delete copy.actionPlanStatus;
+      return copy;
     }
 
     function closeDetails() {
@@ -2396,7 +2547,52 @@
     // Listes déroulantes à cases (Poste, Famille, IMMO, MSN) : recherche, tout cocher / décocher,
     // regroupement des variantes de poste et bouton Appliquer. Un filtre vide est envoyé comme ''
     // pour garder les mêmes clés de cache que le préchauffage serveur.
-    const MULTI_SELECT_KEYS = ['station', 'family', 'immo', 'msn'];
+    const MULTI_SELECT_KEYS = ['station', 'family', 'immo', 'msn', 'actionTone'];
+    // Suivi plan d'actions : filtre appliqué dans le navigateur sur les graphiques de l'item 2.
+    const ACTION_TONES = [
+      { value: 'NON_TRAITEE', label: 'Aucune action', color: '#8e7cc3' },
+      { value: 'CLOTUREE_ANCIENNE', label: 'Clôturée +6 mois, problème qui revient', color: '#f2b27a' },
+      { value: 'EN_COURS', label: 'Action ouverte / en cours', color: '#2f6fb3' },
+      { value: 'TERMINEE_RECENTE', label: 'Clôturée et prise en compte (< 6 mois)', color: '#3f9a5f' },
+      { value: 'INCONNU', label: 'Suivi indisponible', color: '#a7b0b1' }
+    ];
+    const ACTION_TONES_TO_REVIEW = ['NON_TRAITEE', 'CLOTUREE_ANCIENNE'];
+
+    function selectedActionTones_() {
+      return multiSelectValues_('actionTone');
+    }
+
+    function actionToneVisible_(item) {
+      const tones = selectedActionTones_();
+      return !tones.length || !item.actionPlanStatus || tones.includes(item.actionPlanStatus);
+    }
+
+    function setMultiSelectValues_(key, values) {
+      const wanted = new Set(values.map(String));
+      const root = document.getElementById(`${key}Picker`);
+      if (!root) return;
+      const existing = [...root.querySelectorAll('input[data-value]')].map(input => input.dataset.value);
+      const missing = [...wanted].filter(value => !existing.includes(value));
+      if (missing.length && key !== 'actionTone') fillMultiSelect_(key, existing.concat(missing));
+      root.querySelectorAll('input[data-value]').forEach(input => { input.checked = wanted.has(input.dataset.value); });
+      syncMultiSelectGroups_(root);
+      updateMultiSelectSummary_(key);
+    }
+
+    function applyActionToneFilter_() {
+      updateActiveFilterCount_();
+      syncActionLegend_();
+      redrawActiveView_();
+    }
+
+    function syncActionLegend_() {
+      const tones = selectedActionTones_();
+      document.querySelectorAll('#actionPlanLegend [data-tone]').forEach(chip => {
+        const active = !tones.length || tones.includes(chip.dataset.tone);
+        chip.classList.toggle('inactive', !active);
+        chip.setAttribute('aria-pressed', String(tones.includes(chip.dataset.tone)));
+      });
+    }
 
     function initMultiSelects_() {
       MULTI_SELECT_KEYS.forEach(key => {
@@ -2413,6 +2609,11 @@
           const action = event.target.closest('[data-multi-action]');
           if (!action) return;
           if (action.dataset.multiAction === 'apply') { applyMultiSelect_(root); return; }
+          if (action.dataset.multiAction === 'to-review') {
+            setMultiSelectValues_(key, ACTION_TONES_TO_REVIEW);
+            applyMultiSelect_(root);
+            return;
+          }
           const checked = action.dataset.multiAction === 'all';
           root.querySelectorAll('.multi-select-options label:not([hidden]) input[data-value]').forEach(input => { input.checked = checked; });
           syncMultiSelectGroups_(root);
@@ -2454,6 +2655,7 @@
 
     function applyMultiSelect_(root) {
       setMultiSelectOpen_(root, false);
+      if (root.dataset.apply === 'local') { applyActionToneFilter_(); return; }
       updateActiveFilterCount_();
       reloadCurrentView();
     }
@@ -2463,14 +2665,14 @@
       return match ? `Poste ${match[1]}` : 'Autres postes';
     }
 
-    function fillMultiSelect_(key, values) {
+    function fillMultiSelect_(key, values, labelFor, colorFor) {
       const root = document.getElementById(`${key}Picker`);
       if (!root) return;
       const container = root.querySelector('.multi-select-options');
       const selected = new Set(multiSelectValues_(key));
       const unique = [...new Set((values || []).map(value => String(value)).filter(Boolean))];
       selected.forEach(value => { if (!unique.includes(value)) unique.push(value); });
-      unique.sort((left, right) => left.localeCompare(right, 'fr', { numeric: true, sensitivity: 'base' }));
+      if (!labelFor) unique.sort((left, right) => left.localeCompare(right, 'fr', { numeric: true, sensitivity: 'base' }));
       const option = (value, group, child) => {
         const label = document.createElement('label');
         if (child) label.className = 'multi-select-child';
@@ -2479,8 +2681,16 @@
         input.dataset.value = value;
         if (group !== null) input.dataset.group = group;
         input.checked = selected.has(value);
-        label.dataset.search = normalizeSearch_(value);
-        label.append(input, document.createTextNode(value));
+        const text = labelFor ? labelFor(value) : value;
+        label.dataset.search = normalizeSearch_(`${value} ${text}`);
+        label.append(input);
+        if (colorFor) {
+          const swatch = document.createElement('span');
+          swatch.className = 'multi-select-swatch';
+          swatch.style.background = colorFor(value);
+          label.append(swatch);
+        }
+        label.append(document.createTextNode(text));
         return label;
       };
       const nodes = [];
@@ -2550,6 +2760,9 @@
         const fullGroups = [...root.querySelectorAll('.multi-select-group input')].filter(input => input.checked).map(input => input.dataset.group);
         const rest = selected.filter(value => !fullGroups.includes(stationGroupKey_(value)) || !root.querySelector(`.multi-select-group input[data-group="${CSS.escape(stationGroupKey_(value))}"]`));
         text = [...fullGroups, ...rest].join(', ');
+      } else if (selected.length && key === 'actionTone') {
+        const labels = selected.map(value => (ACTION_TONES.find(tone => tone.value === value) || { label: value }).label);
+        text = selected.length === 2 && ACTION_TONES_TO_REVIEW.every(value => selected.includes(value)) ? 'À traiter en MFT' : labels.length <= 1 ? labels.join('') : `${labels.length} suivis`;
       } else if (selected.length) {
         text = selected.length <= 2 ? selected.join(', ') : `${selected.length} sélectionnés`;
       }
@@ -2591,7 +2804,7 @@
       const sourceFilter = document.getElementById('source');
       const businessCount = ['family', 'immo', 'station', 'msn'].filter(key => hasFilterValue_(filters[key])).length + (!sourceFilter.disabled && filters.source ? 1 : 0);
       const activePeriod = document.querySelector('#periodPresets button.active');
-      return businessCount + (!activePeriod || activePeriod.dataset.days !== 'year' ? 1 : 0);
+      return businessCount + (selectedActionTones_().length ? 1 : 0) + (!activePeriod || activePeriod.dataset.days !== 'year' ? 1 : 0);
     }
 
     function updateActiveFilterCount_() {
@@ -2609,6 +2822,7 @@
       document.getElementById('filters').reset();
       document.querySelectorAll('.multi-select-options input').forEach(input => { input.checked = false; input.indeterminate = false; });
       MULTI_SELECT_KEYS.forEach(updateMultiSelectSummary_);
+      syncActionLegend_();
       window.sharedSourceFilter_ = '';
       configureSourceFilterForView_(activeView_());
       setPeriod('year', true);
@@ -2680,6 +2894,22 @@
 
     function formatNumber(value) { return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(value || 0); }
     function formatDecimal(value) { return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(value || 0); }
+    // Schéma de synthèse : compteurs vivants issus de la dernière réponse du Pilotage.
+    function renderOverviewFlow_(data) {
+      const kpis = data.kpis || {};
+      const summary = ((data.review || {}).actionPlanCoverage || {}).summary || {};
+      const set = (id, value) => { const node = document.getElementById(id); if (node) node.textContent = value; };
+      set('flowAleas', formatNumber(kpis.aleas));
+      set('flowMes', formatNumber(kpis.mes));
+      set('flowNc', formatNumber(kpis.nc));
+      set('flowCoverage', `${formatNumber(kpis.masterCoverage)} %`);
+      set('flowToneNone', formatNumber(summary.NON_TRAITEE));
+      set('flowToneRecurring', formatNumber(summary.CLOTUREE_ANCIENNE));
+      set('flowToneOpen', formatNumber(summary.EN_COURS));
+      set('flowToneDone', formatNumber(summary.TERMINEE_RECENTE));
+      set('flowRefresh', data.refreshedAt ? `Données du ${formatDateTime(data.refreshedAt)}` : 'Données : jamais actualisées');
+    }
+
     function renderActionPlanLegend_(coverage) {
       const legend = document.getElementById('actionPlanLegend');
       if (!legend) return;
@@ -2689,6 +2919,45 @@
         node.textContent = coverage && coverage.available && Number.isFinite(count) ? `(${formatNumber(count)} action${count > 1 ? 's' : ''})` : '';
       });
     }
+    // Icônes intégrées (tracés inspirés de Lucide, licence ISC) : plus aucun script chargé hors
+    // de Google. Seules les ressources Google restent externes (Google Charts, Google Fonts).
+    const ICON_PATHS = {
+      'x': ['M18 6 6 18', 'm6 6 12 12'],
+      'refresh-cw': ['M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8', 'M21 3v5h-5', 'M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16', 'M8 16H3v5'],
+      'rotate-ccw': ['M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8', 'M3 3v5h5'],
+      'maximize-2': ['M15 3h6v6', 'M9 21H3v-6', 'M21 3l-7 7', 'M3 21l7-7'],
+      'minimize-2': ['M4 14h6v6', 'M20 10h-6V4', 'm14 10 7-7', 'm3 21 7-7'],
+      'panel-left-close': ['M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z', 'M9 3v18', 'm16 15-3-3 3-3'],
+      'panel-left-open': ['M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z', 'M9 3v18', 'm14 9 3 3-3 3'],
+      'shield-alert': ['M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z', 'M12 8v4', 'M12 16h.01'],
+      'folder-up': ['M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z', 'M12 10v6', 'm9 13 3-3 3 3'],
+      'file-input': ['M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4', 'M14 2v4a2 2 0 0 0 2 2h4', 'M2 15h10', 'm9 18 3-3-3-3']
+    };
+
+    function renderIcons_(root) {
+      (root || document).querySelectorAll('i[data-lucide]').forEach(node => {
+        const name = node.dataset.lucide;
+        const paths = ICON_PATHS[name];
+        if (!paths) return;
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        ['width', 'height'].forEach(attribute => svg.setAttribute(attribute, '24'));
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('stroke-width', '2');
+        svg.setAttribute('stroke-linecap', 'round');
+        svg.setAttribute('stroke-linejoin', 'round');
+        svg.setAttribute('aria-hidden', 'true');
+        svg.setAttribute('class', `lucide lucide-${name}`);
+        paths.forEach(definition => {
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          path.setAttribute('d', definition);
+          svg.appendChild(path);
+        });
+        node.replaceWith(svg);
+      });
+    }
+
     function formatCurrency(value) { return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value || 0); }
     function formatDateTime(value) { return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value)); }
     function formatInputDate(value) { const [year, month, day] = value.split('-'); return `${day}/${month}/${year}`; }

@@ -79,6 +79,31 @@ function ensureUsageGuide_(spreadsheet) {
   return guide;
 }
 
+// Sécurité : la web app s'exécute avec le compte de déploiement (executeAs USER_DEPLOYING) et
+// toute fonction globale sans « _ » final est appelable depuis le navigateur via google.script.run.
+// Les fonctions d'écriture sont donc réservées aux éditeurs du classeur central. Les déclencheurs
+// automatiques (utilisateur non identifié) et les appels depuis les menus du classeur restent permis.
+function requireSpreadsheetEditor_(actionName) {
+  let email = '';
+  try {
+    email = clean_(Session.getActiveUser().getEmail()).toLowerCase();
+  } catch (error) {
+    email = '';
+  }
+  if (!email) return;
+  const cache = typeof CacheService !== 'undefined' ? CacheService.getScriptCache() : null;
+  const cacheKey = `editor-check-${digest_(email)}`;
+  if (cache && cache.get(cacheKey) === 'OUI') return;
+  const spreadsheet = SpreadsheetApp.getActive();
+  const allowed = [spreadsheet.getOwner()].concat(spreadsheet.getEditors())
+    .filter(Boolean)
+    .map(user => clean_(user.getEmail()).toLowerCase());
+  if (!allowed.includes(email)) {
+    throw new Error(`Action « ${actionName} » réservée aux éditeurs du classeur Dashboard Machine.`);
+  }
+  if (cache) cache.put(cacheKey, 'OUI', 600);
+}
+
 function doGet() {
   return HtmlService.createTemplateFromFile('Index')
     .evaluate()
@@ -86,6 +111,7 @@ function doGet() {
 }
 
 function initialiserApplication() {
+  requireSpreadsheetEditor_('initialiserApplication');
   const spreadsheet = SpreadsheetApp.getActive();
   ensureUsageGuide_(spreadsheet);
   const parameters = ensureSheet_(spreadsheet, APP.sheets.parameters);
@@ -136,7 +162,33 @@ function initialiserApplication() {
 }
 
 function actualiserTout() {
-  return withScriptLock_(actualiserToutUnlocked_);
+  requireSpreadsheetEditor_('actualiserTout');
+  const result = withScriptLock_(actualiserToutUnlocked_);
+  // Les nouvelles données sont publiées : on prépare tout de suite les vues par défaut,
+  // pour que le premier utilisateur après l'actualisation (toutes les 6 h) n'attende pas.
+  prechaufferApresActualisation_();
+  return result;
+}
+
+function prechaufferApresActualisation_() {
+  const filters = defaultPrewarmFilters_();
+  [
+    ['vue Pilotage', () => getDashboardData(filters)],
+    ['vue NC', () => getSourceAnalysisData('NC', filters, false)]
+  ].forEach(([label, warm]) => {
+    try {
+      warm();
+    } catch (error) {
+      console.warn(`Préchauffage du cache impossible (${label}) : ${error.message || error}`);
+    }
+  });
+}
+
+function defaultPrewarmFilters_() {
+  const today = new Date();
+  const yearAgo = new Date(today);
+  yearAgo.setFullYear(today.getFullYear() - 1);
+  return { family: '', source: '', immo: '', station: [], msn: '', from: dateKey_(yearAgo), to: dateKey_(today) };
 }
 
 function diagnostiquerDatesAleasProduction() {
@@ -222,6 +274,7 @@ function actualiserToutUnlocked_() {
 }
 
 function installerDeclencheur() {
+  requireSpreadsheetEditor_('installerDeclencheur');
   ScriptApp.getProjectTriggers()
     .filter(trigger => trigger.getHandlerFunction() === 'actualiserTout')
     .forEach(trigger => ScriptApp.deleteTrigger(trigger));
@@ -230,6 +283,7 @@ function installerDeclencheur() {
 }
 
 function installerPrechauffageCache() {
+  requireSpreadsheetEditor_('installerPrechauffageCache');
   ScriptApp.getProjectTriggers()
     .filter(trigger => trigger.getHandlerFunction() === 'prechaufferCacheDashboard')
     .forEach(trigger => ScriptApp.deleteTrigger(trigger));
@@ -239,10 +293,7 @@ function installerPrechauffageCache() {
 }
 
 function prechaufferCacheDashboard() {
-  const today = new Date();
-  const yearAgo = new Date(today);
-  yearAgo.setFullYear(today.getFullYear() - 1);
-  return getDashboardData({ family: '', source: '', immo: '', station: [], msn: '', from: dateKey_(yearAgo), to: dateKey_(today) });
+  return getDashboardData(defaultPrewarmFilters_());
 }
 
 function ouvrirNcPourPreparation() {
@@ -277,6 +328,7 @@ function ouvrirNcWorkflow_(statuses, roleLabel) {
 }
 
 function soumettreNcPrevisionnelles() {
+  requireSpreadsheetEditor_('soumettreNcPrevisionnelles');
   return withScriptLock_(() => {
     const context = selectedMesPreNcRows_();
     const now = new Date();
@@ -309,6 +361,7 @@ function soumettreNcPrevisionnelles() {
 }
 
 function enregistrerDecisionsQualite() {
+  requireSpreadsheetEditor_('enregistrerDecisionsQualite');
   return withScriptLock_(() => {
     const context = selectedMesPreNcRows_();
     const now = new Date();
@@ -617,21 +670,21 @@ function getDashboardData(filters, publishedOnly) {
 }
 
 function searchSourceAnalysisDetails(source, filters, query, requestedLimit) {
-  if (!['ALEA', 'NC'].includes(source)) throw new Error('Analyse source non prise en charge.');
+  if (source !== 'NC') throw new Error('Analyse source non prise en charge.');
   const requested = Object.assign({}, filters || {}, { source });
   const normalizedQuery = normalizeHeader_(query);
   const limit = Math.min(500, Math.max(1, Math.floor(numberOr_(requestedLimit, 100))));
   const cacheKey = analyticsCacheKey_(`source-details-${source}`, { filters: requested, query: normalizedQuery, limit });
-  const cached = source === 'ALEA' ? null : readAnalyticsCache_(cacheKey);
+  const cached = readAnalyticsCache_(cacheKey);
   if (cached) return cached;
-  const factData = source === 'ALEA' ? readProductionAleaFacts_() : readFactsForAnalysis_(requested);
+  const factData = readFactsForAnalysis_(requested);
   if (!factData.values.length) return { total: 0, limit, rows: [] };
   const index = Object.fromEntries(factData.headers.map((header, position) => [header, position]));
   const sourceRows = factData.values.filter(row => matchesFilters_(row, index, requested));
   const details = buildSourceDetailRows_(sourceRows, index, source)
     .filter(detail => !normalizedQuery || normalizeHeader_(Object.values(detail).join(' ')).includes(normalizedQuery));
   const result = { total: details.length, limit, rows: details.slice(0, limit) };
-  return source === 'ALEA' ? result : cacheAnalyticsResponse_(cacheKey, result);
+  return cacheAnalyticsResponse_(cacheKey, result);
 }
 
 function getDataQualityAuditData(filters) {
@@ -1018,9 +1071,9 @@ function buildImportQualityAudit_(sheet) {
 }
 
 function getSourceAnalysisData(source, filters, publishedOnly) {
-  if (!['ALEA', 'NC'].includes(source)) throw new Error('Analyse source non prise en charge.');
+  // Seule l'analyse NC reste exposée : la page « Analyses Aléas » a été retirée.
+  if (source !== 'NC') throw new Error('Analyse source non prise en charge.');
   const requested = Object.assign({}, filters || {}, { source });
-  if (source === 'ALEA' && !publishedOnly) return getProductionAleaAnalysisData_(requested);
   const cacheKey = analyticsCacheKey_(publishedOnly ? `source-${source}-published` : `source-${source}`, requested);
   const cached = readAnalyticsCache_(cacheKey);
   if (cached) return cached;
@@ -1048,59 +1101,6 @@ function getSourceAnalysisData(source, filters, publishedOnly) {
     })()
   });
   return cacheAnalyticsResponse_(cacheKey, result);
-}
-
-function getProductionAleaAnalysisData_(filters) {
-  const factData = readProductionAleaFacts_();
-  const values = factData.values;
-  const sourceRows = factData.sourceRows;
-  const headers = factData.headers;
-  const index = Object.fromEntries(headers.map((header, position) => [header, position]));
-  const data = buildSourceAnalysis_(values, index, 'ALEA', filters, getAnalyticReferences_(filters));
-  const properties = PropertiesService.getScriptProperties().getProperties();
-  return Object.assign(data, {
-    origin: sourceAnalysisOrigin_('ALEA'),
-    empty: data.kpis.total === 0,
-    message: data.kpis.total === 0
-      ? 'Aucun aléa ne correspond aux filtres. Vérifiez les colonnes Section (TC) et Poste (370, 360 ou 355) de la source.'
-      : '',
-    refreshedAt: properties.LAST_REFRESH || '',
-    options: collectSourceAnalysisOptions_(values, index, 'ALEA'),
-    schema: { missing: [], needsRefresh: false },
-    sourceQuality: { rawRows: sourceRows.length, retainedRows: values.length }
-  });
-}
-
-function readProductionAleaFacts_() {
-  const parameters = getParameters_();
-  if (!parameters.ID_FICHIER_ALEAS) throw new Error('Paramètre obligatoire non renseigné : ID_FICHIER_ALEAS');
-
-  let master = buildMasterIndex_([]);
-  if (parameters.ID_FICHIER_MASTER) {
-    try {
-      master = buildMasterIndex_(readRecords_(parameters.ID_FICHIER_MASTER, APP.sourceSheets.master));
-    } catch (error) {
-    }
-  }
-
-  const sourceRows = readRecords_(parameters.ID_FICHIER_ALEAS, APP.sourceSheets.aleas);
-  const values = [];
-  appendFacts_(values, sourceRows, 'ALEA', APP.aliases.aleas, master, parameters, APP.sourceSheets.aleas);
-  const headers = APP.factsHeaders.slice();
-  const index = Object.fromEntries(headers.map((header, position) => [header, position]));
-  const data = buildSourceAnalysis_(values, index, 'ALEA', filters, getAnalyticReferences_(filters));
-  const properties = PropertiesService.getScriptProperties().getProperties();
-  return Object.assign(data, {
-    origin: sourceAnalysisOrigin_('ALEA'),
-    empty: data.kpis.total === 0,
-    message: data.kpis.total === 0
-      ? 'Aucun aléa ne correspond aux filtres. Vérifiez les colonnes Section (TC) et Poste de la source.'
-      : '',
-    refreshedAt: properties.LAST_REFRESH || '',
-    options: collectSourceAnalysisOptions_(values, index, 'ALEA'),
-    schema: { missing: [], needsRefresh: false },
-    sourceQuality: { rawRows: sourceRows.length, retainedRows: values.length }
-  });
 }
 
 function getCombinedAleaAnalysisData(filters) {
@@ -1359,6 +1359,7 @@ function combinedAleaKeywords_(value) {
 }
 
 function archiverFactsHistoriques() {
+  requireSpreadsheetEditor_('archiverFactsHistoriques');
   return withScriptLock_(() => {
     const sheet = getActiveFactsSheet_(SpreadsheetApp.getActive());
     if (!sheet || sheet.getLastRow() < 2) return { active: 0, archived: 0 };
@@ -1588,14 +1589,10 @@ function trendWindow_() {
 function getDashboardDetails(filters, selection) {
   const request = { filters: filters || {}, selection: selection || {} };
   const cacheKey = analyticsCacheKey_('details', request);
-  const directSource = selection && selection.directSource && filters && filters.source === 'ALEA';
-  const cached = directSource ? null : readAnalyticsCache_(cacheKey);
+  const cached = readAnalyticsCache_(cacheKey);
   if (cached) return cached;
-  const factData = directSource ? readProductionAleaFacts_() : readFactsForAnalysis_(filters || {});
-  if (!factData.values.length) {
-    const empty = { total: 0, rows: [] };
-    return directSource ? empty : cacheAnalyticsResponse_(cacheKey, empty);
-  }
+  const factData = readFactsForAnalysis_(filters || {});
+  if (!factData.values.length) return cacheAnalyticsResponse_(cacheKey, { total: 0, rows: [] });
   const values = factData.values;
   const headers = factData.headers;
   const index = Object.fromEntries(headers.map((header, position) => [header, position]));
@@ -1622,7 +1619,7 @@ function getDashboardDetails(filters, selection) {
       matchMethod: clean_(row[index.RAPPROCHEMENT_MES])
     }))
   };
-  return directSource ? result : cacheAnalyticsResponse_(cacheKey, result);
+  return cacheAnalyticsResponse_(cacheKey, result);
 }
 
 function matchesDetailSelection_(row, index, selection) {
@@ -1755,10 +1752,12 @@ function sortMftActions_(left, right) {
 }
 
 function saveMftAction(action) {
+  requireSpreadsheetEditor_('saveMftAction');
   return saveOfficialMftAction_(action);
 }
 
 function deleteMftAction(id) {
+  requireSpreadsheetEditor_('deleteMftAction');
   return abandonOfficialMftAction_(id);
 }
 
@@ -2317,6 +2316,7 @@ function migrateSecureParameters_(current, spreadsheet) {
 }
 
 function synchroniserSourcesConnues() {
+  requireSpreadsheetEditor_('synchroniserSourcesConnues');
   return withScriptLock_(() => {
     const current = getParameters_();
     const masterId = clean_(current.ID_FICHIER_MASTER);
@@ -2368,6 +2368,7 @@ function cleanupStaleFactsPublicationSheets_(spreadsheet, activeSheet) {
 }
 
 function nettoyerOngletsTemporaires() {
+  requireSpreadsheetEditor_('nettoyerOngletsTemporaires');
   return withScriptLock_(() => {
     const spreadsheet = SpreadsheetApp.getActive();
     cleanupStaleFactsPublicationSheets_(spreadsheet, getActiveFactsSheet_(spreadsheet));
@@ -3163,7 +3164,8 @@ function readDirectNcCostAggregates_(filters) {
     if (immo) addCostAggregate_(machines, immo, cost, 'NC', family);
   });
   const result = { available: true, families: Object.values(families), machines: Object.values(machines), refreshedAt: new Date().toISOString() };
-  if (cache) writeJsonCache_(cache, cacheKey, result, 60, 'coûts NC directs');
+  // 30 min (et non 60 s) : la lecture directe NC relit le master, Doc&Martin et la source NC.
+  if (cache) writeJsonCache_(cache, cacheKey, result, 1800, 'coûts NC directs');
   return result;
 }
 
@@ -3260,7 +3262,7 @@ function readActionPlanCoverage_() {
   if (!sources.length) return unavailable;
 
   const cache = typeof CacheService !== 'undefined' ? CacheService.getScriptCache() : null;
-  const cacheKey = `tc-action-coverage-v3-${digest_(sources.map(source => source.id).join('|'))}`;
+  const cacheKey = `tc-action-coverage-v4-${digest_(sources.map(source => source.id).join('|'))}`;
   const cached = cache ? readJsonCache_(cache, cacheKey, 'suivi des plans TC') : null;
   if (cached) return cached;
 
@@ -3276,7 +3278,7 @@ function readActionPlanCoverage_() {
       if (!sourceActions.some(item => clean_(item.immo) || clean_(item.family))) {
         throw new Error('Aucun IMMO ou famille rapproché dans le plan.');
       }
-      actions.push(...sourceActions);
+      actions.push(...sourceActions.map(item => Object.assign({ plan: source.label }, item)));
       sourcesRead += 1;
     } catch (error) {
       errors.push(`${source.label} : ${error.message || String(error)}`);
@@ -3290,7 +3292,15 @@ function readActionPlanCoverage_() {
     sourceCount: sources.length,
     errors
   });
-  if (cache) writeJsonCache_(cache, cacheKey, coverage, 60, 'suivi des plans TC');
+  // 30 min (et non 60 s) : chaque lecture parcourt les onglets datés des plans MFT.
+  // Une copie « dernière lecture réussie » (6 h) sert de secours si un classeur est inaccessible.
+  if (cache && coverage.available) {
+    writeJsonCache_(cache, cacheKey, coverage, 1800, 'suivi des plans TC');
+    writeJsonCache_(cache, `${cacheKey}-last-good`, coverage, 21600, 'suivi des plans TC (secours)');
+  } else if (cache) {
+    const lastGood = readJsonCache_(cache, `${cacheKey}-last-good`, 'suivi des plans TC (secours)');
+    if (lastGood) return Object.assign(lastGood, { stale: true, errors: errors.concat(lastGood.errors || []) });
+  }
   return coverage;
 }
 
@@ -3302,8 +3312,12 @@ function readTcActionPlanActions_(spreadsheet, master) {
   return readSheetObjects_(official).map(item => ({
     immo: clean_(item.IMMO),
     family: clean_(item.FAMILLE),
+    ref: clean_(item.REF_MFT).replace(/\.0+$/, ''),
+    issue: clean_(item.CONSTAT),
     action: clean_(item.ACTION_DECIDEE),
     status: normalizeMftStatus_(item.STATUT),
+    due: actionPlanDueText_(item.ECHEANCE_INITIALE),
+    owner: clean_(item.RESPONSABLES),
     closedAt: actionPlanIsoDate_(item.DATE_CLOTURE || (normalizeMftStatus_(item.STATUT) === 'Fait' ? item.DATE_DERNIERE_MAJ : ''))
   })).filter(item => item.action && (item.immo || item.family));
 }
@@ -3341,6 +3355,7 @@ function actionPlanCoverageFromActions_(actions, referenceDate) {
   const coverage = {
     immos: {}, families: {}, unknownImmos: {}, unknownFamilies: {},
     summary: { actions: 0, EN_COURS: 0, TERMINEE_RECENTE: 0, CLOTUREE_ANCIENNE: 0, NON_TRAITEE: 0, INCONNU: 0 },
+    actions: [], actionsByImmo: {}, actionsByFamily: {},
     recentMonths: ACTION_PLAN_RECENT_MONTHS,
     referenceDate: toIsoDate_(referenceDate || new Date())
   };
@@ -3352,6 +3367,18 @@ function actionPlanCoverageFromActions_(actions, referenceDate) {
     const tone = actionPlanToneForAction_(action, recentLimit);
     coverage.summary.actions += 1;
     coverage.summary[tone] += 1;
+    const position = coverage.actions.length;
+    coverage.actions.push({
+      ref: clean_(action.ref), plan: clean_(action.plan), issue: clean_(action.issue).slice(0, 140),
+      action: clean_(action.action).slice(0, 180), status: clean_(action.status), tone,
+      due: clean_(action.due), closedAt: clean_(action.closedAt), owner: clean_(action.owner).slice(0, 80)
+    });
+    const link = (target, key) => {
+      if (!target[key]) target[key] = [];
+      if (!target[key].includes(position)) target[key].push(position);
+    };
+    actionPlanCoverageTokens_(action.immo, /[;,/|\n]+/).forEach(key => link(coverage.actionsByImmo, key));
+    actionPlanCoverageTokens_(action.family, /[;|\n]+/).forEach(key => link(coverage.actionsByFamily, key));
     const immoTarget = tone === 'INCONNU' ? coverage.unknownImmos : coverage.immos;
     const familyTarget = tone === 'INCONNU' ? coverage.unknownFamilies : coverage.families;
     actionPlanCoverageTokens_(action.immo, /[;,/|\n]+/).forEach(key => {
@@ -3402,8 +3429,11 @@ function readActionPlanSnapshots_(snapshots, master, referenceDate) {
       ref: action.ref,
       immo: identity.immo,
       family: identity.famille,
+      issue: action.issue,
       action: action.decision,
       status: action.status,
+      due: actionPlanDueText_(action.due),
+      owner: action.owner || '',
       closedAt: action.closedAt ? toIsoDate_(action.closedAt) : ''
     };
   }).filter(item => item.action && (item.immo || item.family));
@@ -3435,6 +3465,7 @@ function actionPlanRowsFromValues_(rows, columns) {
     decision: clean_(cell(row, columns.action)),
     status: normalizeMftStatus_(cell(row, columns.status)),
     due: cell(row, columns.due),
+    owner: clean_(cell(row, columns.responsable)).replace(/\s*\n+\s*/g, ', '),
     comment: clean_(cell(row, columns.comment))
   })).filter(row => row.ref || row.issue || row.decision);
 }
@@ -3496,6 +3527,13 @@ function estimateActionPlanClosure_(row, upperBound) {
   const due = row.due instanceof Date ? row.due : null;
   if (due && !Number.isNaN(due.getTime()) && due.getTime() <= limit) return due;
   return null;
+}
+
+function actionPlanDueText_(value) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return toIsoDate_(value);
+  const numeric = Number(value);
+  if (Number.isFinite(numeric) && numeric >= 1900 && numeric <= 2100) return String(numeric);
+  return clean_(value);
 }
 
 function actionPlanIsoDate_(value) {
@@ -3570,8 +3608,21 @@ function buildActionPlanCostQuality_(rows, coverage, hasCompleteTotals) {
 
 function annotateActionPlanRows_(rows, dimension, coverage) {
   return (rows || []).map(row => Object.assign({}, row, {
-    actionPlanStatus: actionPlanStatusForKey_(row.label, dimension, coverage)
+    actionPlanStatus: actionPlanStatusForKey_(row.label, dimension, coverage),
+    actionPlanActions: actionPlanActionsForKey_(row.label, dimension, coverage, 6)
   }));
+}
+
+// Actions MFT liées à une barre : les plus actuelles d'abord (en cours, clôturées récemment…).
+function actionPlanActionsForKey_(label, dimension, coverage, limit) {
+  const byKey = (dimension === 'immo' ? coverage.actionsByImmo : coverage.actionsByFamily) || {};
+  const key = normalizeHeader_(clean_(label).replace(/\.0+$/, ''));
+  return (byKey[key] || [])
+    .map(position => (coverage.actions || [])[position])
+    .filter(Boolean)
+    .sort((left, right) => (ACTION_PLAN_TONE_RANK[right.tone] || 0) - (ACTION_PLAN_TONE_RANK[left.tone] || 0)
+      || String(right.closedAt || right.due).localeCompare(String(left.closedAt || left.due)))
+    .slice(0, limit || 6);
 }
 
 function isUsableCostFamily_(label) {
@@ -3747,11 +3798,26 @@ function getDrillingByFamily_(spreadsheetId) {
   return result;
 }
 
+// Une réponse > 95 Ko est découpée en morceaux (CacheService limite chaque valeur à 100 Ko).
+// L'entrée principale ne contient alors que le nombre de morceaux ; si un morceau a été évincé,
+// la lecture renvoie null et la réponse est simplement recalculée.
+const CACHE_CHUNK_CHARACTERS = 30000;
+const CACHE_MAX_CHUNKS = 30;
+
 function readJsonCache_(cache, key, purpose) {
   let serialized = null;
   try {
     serialized = cache.get(key);
-    return serialized ? JSON.parse(serialized) : null;
+    if (!serialized) return null;
+    const parsed = JSON.parse(serialized);
+    if (parsed && typeof parsed === 'object' && Number.isInteger(parsed.__cacheChunks)) {
+      if (typeof cache.getAll !== 'function') return null;
+      const keys = Array.from({ length: parsed.__cacheChunks }, (_value, position) => `${key}#${position}`);
+      const chunks = cache.getAll(keys) || {};
+      if (keys.some(chunkKey => typeof chunks[chunkKey] !== 'string')) return null;
+      return JSON.parse(keys.map(chunkKey => chunks[chunkKey]).join(''));
+    }
+    return parsed;
   } catch (error) {
     if (serialized && cache && typeof cache.remove === 'function') {
       try {
@@ -3788,16 +3854,33 @@ function writeJsonCache_(cache, key, value, expirationSeconds, purpose) {
     console.warn(`Sérialisation de cache impossible (${label}) : ${error.message || error}`);
     return false;
   }
-  if (byteLength > 95000) {
-    console.warn(`Valeur trop volumineuse pour le cache (${byteLength} octets) : ${label}`);
-    return false;
-  }
+  if (byteLength > 95000) return writeChunkedJsonCache_(cache, cacheKey, serialized, ttl, label, byteLength);
 
   try {
     cache.put(cacheKey, serialized, ttl);
     return true;
   } catch (error) {
     console.warn(`Écriture de cache impossible (${label}) : ${error.message || error}`);
+    return false;
+  }
+}
+
+function writeChunkedJsonCache_(cache, cacheKey, serialized, ttl, label, byteLength) {
+  const chunkCount = Math.ceil(serialized.length / CACHE_CHUNK_CHARACTERS);
+  if (typeof cache.putAll !== 'function' || chunkCount > CACHE_MAX_CHUNKS || `${cacheKey}#${chunkCount}`.length > 250) {
+    console.warn(`Valeur trop volumineuse pour le cache (${byteLength} octets) : ${label}`);
+    return false;
+  }
+  const entries = {};
+  for (let position = 0; position < chunkCount; position += 1) {
+    entries[`${cacheKey}#${position}`] = serialized.slice(position * CACHE_CHUNK_CHARACTERS, (position + 1) * CACHE_CHUNK_CHARACTERS);
+  }
+  try {
+    cache.putAll(entries, ttl);
+    cache.put(cacheKey, JSON.stringify({ __cacheChunks: chunkCount }), ttl);
+    return true;
+  } catch (error) {
+    console.warn(`Écriture de cache découpée impossible (${label}) : ${error.message || error}`);
     return false;
   }
 }
@@ -3843,8 +3926,13 @@ function readAnalyticsCache_(key) {
   return readJsonCache_(CacheService.getScriptCache(), key, 'réponse analytique');
 }
 
+// Les réponses sont conservées 6 h (maximum CacheService), soit la période de l'actualisation
+// automatique. La clé inclut ANALYTICS_CACHE_VERSION, renouvelée à chaque publication de FAITS_IMMO :
+// une actualisation rend donc immédiatement obsolètes les anciennes réponses.
+const ANALYTICS_CACHE_SECONDS = 21600;
+
 function cacheAnalyticsResponse_(key, value) {
-  writeJsonCache_(CacheService.getScriptCache(), key, value, 3600, `réponse analytique ${key}`);
+  writeJsonCache_(CacheService.getScriptCache(), key, value, ANALYTICS_CACHE_SECONDS, `réponse analytique ${key}`);
   return value;
 }
 

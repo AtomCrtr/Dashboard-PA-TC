@@ -1,4 +1,5 @@
 function importerNouveauxFichiersMes() {
+  requireSpreadsheetEditor_('importerNouveauxFichiersMes');
   return withScriptLock_(() => {
     const result = importerNouveauxFichiersMes_(getParameters_());
     SpreadsheetApp.getActive().toast(
@@ -11,6 +12,7 @@ function importerNouveauxFichiersMes() {
 }
 
 function reconstruireHistoriqueMes() {
+  requireSpreadsheetEditor_('reconstruireHistoriqueMes');
   return withScriptLock_(() => {
     const parameters = getParameters_();
     if (!parameters.ID_DOSSIER_MES_ARCHIVES) throw new Error('Le dossier d’archives MES n’est pas configuré.');
@@ -605,6 +607,7 @@ function getMesStatus_() {
 }
 
 function configurerDossierMes() {
+  requireSpreadsheetEditor_('configurerDossierMes');
   return withScriptLock_(() => {
     const parameters = getParameters_();
     if (parameters.ID_DOSSIER_MES_A_DEPOSER) {
