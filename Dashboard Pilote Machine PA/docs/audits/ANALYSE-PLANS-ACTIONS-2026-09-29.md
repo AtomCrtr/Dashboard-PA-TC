@@ -7,12 +7,13 @@
 
 | Couleur | Règle appliquée par le dashboard |
 | --- | --- |
-| **Rouge** | Action non prise en compte : aucune action sur l’IMMO ou la famille, action reportée (`Deferred`) ou abandonnée, ou dernière action clôturée depuis **plus de 6 mois** |
-| **Noir** | Action ouverte / en cours : `Open`, `Due` (en retard) ou action récente sans statut |
-| **Bleu** | Action terminée (`Done`) **dans les 6 derniers mois**, sans autre action ouverte |
+| **Vert** | Action clôturée et prise en compte (`Done`) **dans les 6 derniers mois**, sans autre action ouverte |
+| **Bleu** | Action ouverte / en cours : `Open`, `Due` (en retard) ou action récente sans statut |
+| **Orange pastel** | Dernière action clôturée depuis **plus de 6 mois** et la machine génère de nouveau des coûts : le problème revient |
+| **Rouge** | Action non prise en compte : aucune action, ou action seulement reportée (`Deferred`) / abandonnée |
 | Gris | Plan illisible : couleur impossible à déterminer |
 
-Priorité si plusieurs actions portent sur la même machine : noir > bleu > rouge.
+Une barre n’apparaît que si la machine a des coûts sur la période filtrée : une barre orange signifie donc que des coûts réapparaissent après une action ancienne. Priorité si plusieurs actions portent sur la même machine : bleu > vert > orange > rouge.
 
 Les onglets du plan n’ont pas de colonne « date de clôture ». Le dashboard la reconstitue à partir des onglets datés : la date de clôture est celle de la première réunion où l’action passe à `Done`. À défaut, il prend la dernière date citée dans le commentaire, puis l’échéance. Sur les 3 classeurs, la méthode donne le résultat suivant :
 
@@ -28,9 +29,10 @@ Les onglets du plan n’ont pas de colonne « date de clôture ». Le dashboard 
 | | PA (réunion du 03/09) | TC 355/360/OSW (17/09) | TC 370 (24/09) |
 | --- | ---: | ---: | ---: |
 | Actions dans le dernier onglet | 79 | 63 | 43 |
-| **Noir** : ouvertes / en cours | 8 | **21** | 13 |
-| **Bleu** : terminées depuis moins de 6 mois | 12 | 17 | 20 |
-| **Rouge** : clôturées depuis plus de 6 mois ou reportées | 59 | 25 | 10 |
+| **Bleu** : ouvertes / en cours | 8 | **21** | 13 |
+| **Vert** : clôturées depuis moins de 6 mois | 12 | 17 | 20 |
+| **Orange pastel** : clôturées depuis plus de 6 mois | 55 | 23 | 6 |
+| **Rouge** : reportées / abandonnées | 4 | 2 | 4 |
 | Ouvertes **en retard** (échéance dépassée) | 3 | **19** | 10 |
 | … dont plus de 90 jours de retard | 2 | **12** | 3 |
 | Reportées (`Deferred`) | 4 | 2 | 4 |
@@ -41,9 +43,9 @@ Les onglets du plan n’ont pas de colonne « date de clôture ». Le dashboard 
 ### Constats
 
 1. **Le TC 355/360/OSW accumule les retards** : 19 des 21 actions ouvertes ont une échéance dépassée, dont 12 de plus de 90 jours. Les plus anciennes sont les réf. 170 (parc M4 hors référentiel, échéance 02/09/2025), 180 (NZV0039, 17/07/2025), 186 (visseuse, 18/09/2025) et 187 (201-M2-023, 30/10/2025). Le statut `Due` est posé, mais les dates ne sont pas replanifiées.
-2. **Le PA est surtout rouge par ancienneté** : 59 actions sont clôturées depuis plus de 6 mois. Pour une machine dont les aléas continuent, le rouge signale qu’aucune action récente ne la couvre. C’est l’effet attendu de la règle.
+2. **Le PA est surtout orange par ancienneté** : 55 actions sont clôturées depuis plus de 6 mois. Si la machine génère encore des coûts, sa barre passe en orange : le problème revient et l’action ancienne doit être rouverte ou complétée.
 3. **Les actions reportées ne sont pas revues** : PA 267 (échéance 15/01/2026), 281 et 284 (19/03/2026), TC 355 réf. 168 (24/04/2025) et TC 370 réf. 328 (30/01/2026). Leurs échéances sont dépassées sans nouvelle date.
-4. **Une grande partie des actions ne peut pas être reliée à une machine** (35 à 67 %). L’IMMO ou la famille n’est lisible que dans le texte libre « Issue », par exemple « Batteries et chargeurs », « GO NOGO », « Budget » ou « Moyens uniques ». Ces actions n’apparaissent sur aucune barre. La machine concernée reste donc rouge alors qu’une action existe.
+4. **Une grande partie des actions ne peut pas être reliée à une machine** (35 à 67 %). L’IMMO ou la famille n’est lisible que dans le texte libre « Issue », par exemple « Batteries et chargeurs », « GO NOGO », « Budget » ou « Moyens uniques ». Ces actions n’apparaissent sur aucune barre. La machine concernée reste donc rouge (aucune action trouvée) alors qu’une action existe.
 5. **Les échéances ne sont pas toujours des dates** : on trouve « 2025 » (6 actions PA), « Fin 2025 » (TC 370 réf. 318 et 319), « Fin mars 2025 » ou des cellules vides (4 actions PA ouvertes). Le retard de ces actions ne peut pas être calculé.
 6. **Les responsables sont souvent des services** (« Méthode », « Moyens », « Projet ») et non des personnes, surtout pour les actions ouvertes TC 355. Personne n’est alors clairement chargé de la relance.
 7. **Les en-têtes des onglets ne sont pas mis à jour** : l’onglet PA `03092026` indique « Réunion du 11/06/2026 », et l’onglet TC 355 `03092026` indique « Réunion du 27 Août 2026 ».
@@ -81,10 +83,10 @@ Un script `onEdit` ou une formule peut remplir `Date de clôture` automatiquemen
 
 ### 3.3 Rituel de revue MFT
 
-1. Ouvrir le Pilotage, item 2, sur la période de la réunion, et commencer par les **barres rouges les plus coûteuses** : chacune demande une action ou une justification.
+1. Ouvrir le Pilotage, item 2, sur la période de la réunion, et commencer par les **barres rouges les plus coûteuses** (aucune action) puis les **oranges** (problème qui revient) : chacune demande une action ou une justification.
 2. Passer ensuite les **actions en retard** : replanifier avec une date, clôturer ou reporter avec une date de réexamen.
-3. Vérifier les **barres bleues dont les aléas continuent** : si les coûts remontent après la clôture, l’action n’a pas été efficace.
-4. Suivre 4 indicateurs d’une réunion à l’autre : part des coûts en rouge (KPI « Coûts non traités »), nombre d’actions en retard, âge médian des actions ouvertes, nombre d’actions terminées dans le mois.
+3. Vérifier les **barres vertes dont les coûts continuent** : si les coûts remontent après la clôture, l’action n’a pas été efficace.
+4. Suivre 4 indicateurs d’une réunion à l’autre : part des coûts en rouge ou orange (KPI « Coûts non traités »), nombre d’actions en retard, âge médian des actions ouvertes, nombre d’actions terminées dans le mois.
 
 ### 3.4 Actions immédiates proposées
 
@@ -95,7 +97,8 @@ Un script `onEdit` ou une formule peut remplir `Date de clôture` automatiquemen
 
 ## 4. Améliorations apportées au code (29/09/2026)
 
-- **Couleurs rouge / noir / bleu** sur les graphiques de coût par famille et par IMMO, avec une légende indiquant le nombre d’actions par couleur, une info-bulle par barre et le détail noir/bleu dans le KPI « Coûts non traités ». Le calcul est identique en PA et en TC.
+- **Couleurs vert / bleu / orange pastel / rouge** sur les graphiques de coût par famille et par IMMO, avec une légende indiquant le nombre d’actions par couleur, une info-bulle par barre et le détail par couleur dans le KPI « Coûts non traités ». Le calcul est identique en PA et en TC.
+- **Filtres en listes déroulantes** (Poste, Famille, IMMO, MSN) : recherche, sélection multiple, variantes de poste regroupées.
 - **Historique des plans** : lecture des onglets des 6 derniers mois et de l’onglet précédent, au lieu du seul dernier onglet, pour dater les clôtures. Le cache garde le résultat 60 minutes (clé renouvelée).
 - **Rapidité** : suppression d’une instruction globale dans `MesImport.gs` qui lançait une recherche Drive (et pouvait créer un dossier « MES A DEPOSER ») **à chaque appel serveur**, donc à chaque chargement ou filtre du dashboard.
 - **Fluidité** : les graphiques ne sont plus redessinés deux fois à chaque redimensionnement, ni en boucle quand leur propre hauteur change. La recherche dans le détail est différée de 120 ms et met en cache le texte normalisé des lignes.

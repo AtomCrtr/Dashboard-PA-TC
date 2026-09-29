@@ -85,13 +85,13 @@ const actionPlanCoverage = evaluate(`(() => {
 })()`);
 assert.equal(actionPlanCoverage.recognized, true);
 assert.equal(actionPlanCoverage.count, 3);
-assert.deepEqual([...actionPlanCoverage.immo], ['EN_COURS', 'NON_TRAITEE', 'INCONNU']);
-assert.deepEqual([...actionPlanCoverage.family], ['EN_COURS', 'NON_TRAITEE', 'INCONNU']);
+assert.deepEqual([...actionPlanCoverage.immo], ['EN_COURS', 'CLOTUREE_ANCIENNE', 'INCONNU']);
+assert.deepEqual([...actionPlanCoverage.family], ['EN_COURS', 'CLOTUREE_ANCIENNE', 'INCONNU']);
 assert.equal(actionPlanCoverage.costQuality.status, 'CALCULABLE');
 assert.equal(actionPlanCoverage.costQuality.untreatedCost, 800);
 assert.equal(actionPlanCoverage.costQuality.untreatedPercentage, 80);
 
-// Légende item 2 : noir = en cours, bleu = terminée < 6 mois, rouge = non prise en compte ou close > 6 mois.
+// Légende item 2 : bleu = en cours, vert = clôturée < 6 mois, orange pastel = clôturée > 6 mois et le problème revient, rouge = non prise en compte.
 const actionPlanTones = evaluate(`(() => {
   const reference = new Date(2026, 8, 29);
   const actions = [
@@ -117,12 +117,14 @@ const actionPlanTones = evaluate(`(() => {
     costQuality
   };
 })()`);
-assert.deepEqual(actionPlanTones.immos, ['EN_COURS', 'TERMINEE_RECENTE', 'NON_TRAITEE', 'NON_TRAITEE', 'NON_TRAITEE', 'TERMINEE_RECENTE', 'NON_TRAITEE']);
-assert.deepEqual(actionPlanTones.families, ['EN_COURS', 'TERMINEE_RECENTE', 'NON_TRAITEE', 'NON_TRAITEE', 'NON_TRAITEE']);
+assert.deepEqual(actionPlanTones.immos, ['EN_COURS', 'TERMINEE_RECENTE', 'CLOTUREE_ANCIENNE', 'NON_TRAITEE', 'CLOTUREE_ANCIENNE', 'TERMINEE_RECENTE', 'NON_TRAITEE']);
+assert.deepEqual(actionPlanTones.families, ['EN_COURS', 'TERMINEE_RECENTE', 'CLOTUREE_ANCIENNE', 'NON_TRAITEE', 'NON_TRAITEE']);
 assert.equal(actionPlanTones.missingWhenIncomplete, 'INCONNU');
-assert.deepEqual(actionPlanTones.summary, { actions: 7, EN_COURS: 1, TERMINEE_RECENTE: 2, NON_TRAITEE: 4, INCONNU: 0 });
+assert.deepEqual(actionPlanTones.summary, { actions: 7, EN_COURS: 1, TERMINEE_RECENTE: 2, CLOTUREE_ANCIENNE: 3, NON_TRAITEE: 1, INCONNU: 0 });
 assert.equal(actionPlanTones.costQuality.inProgressCost, 100);
 assert.equal(actionPlanTones.costQuality.recentlyClosedCost, 300);
+assert.equal(actionPlanTones.costQuality.recurringCost, 600);
+assert.equal(actionPlanTones.costQuality.noActionCost, 0);
 assert.equal(actionPlanTones.costQuality.untreatedCost, 600);
 assert.equal(actionPlanTones.costQuality.untreatedPercentage, 60);
 
@@ -575,7 +577,10 @@ assert.ok(html.includes('data-view="dashboard"'));
 assert.ok(!html.includes('data-view="quality"'));
 assert.ok(!html.includes('data-view="combinedAlea"'));
 assert.ok(html.includes('NC à 250 € en moyenne, selon scénario · MES à 110 €/h d’indisponibilité'));
-assert.ok(html.includes('id="msn"'));
+assert.ok(html.includes('id="msnPicker"'));
+assert.ok(html.includes('id="familyPicker"'));
+assert.ok(html.includes('id="immoPicker"'));
+assert.ok(html.includes('data-group="station"'));
 assert.ok(html.includes('id="reviewSourceSwitch"'));
 assert.ok(html.includes('data-review-source="NC"'));
 assert.ok(html.includes('data-review-source="ALEA_MES"'));
@@ -1442,3 +1447,14 @@ assert.equal(normalizedLegacyFacts.rows[0][3], 'ALEA');
 assert.equal(normalizedLegacyFacts.rows[0][27], '');
 
 console.log('OK — syntaxe Apps Script/HTML et règles critiques validées.');
+
+// Filtres en listes déroulantes : sélection exacte multiple, ancien texte libre toujours accepté.
+assert.equal(evaluate("filterValuesMatch_(['SNZ-V3-040'], ['SNZ-V3-040', 'SNZ-M2-010'], true)"), true);
+assert.equal(evaluate("filterValuesMatch_(['SNZ-V3-0401'], ['SNZ-V3-040'], true)"), false);
+assert.equal(evaluate("filterValuesMatch_(['SNZ-V3-040'], [], true)"), true);
+assert.equal(evaluate("filterValuesMatch_(['SNZ-V3-040'], '', true)"), true);
+assert.equal(evaluate("filterValuesMatch_(['SNZ-V3-040'], 'v3-04', true)"), true);
+assert.equal(evaluate("filterValuesMatch_(['806'], '80', false)"), false);
+assert.equal(evaluate("filterValuesMatch_(['1102309', '1102310'], ['1102310'], true)"), true);
+assert.ok(html.includes('function fillMultiSelect_'));
+console.log('OK — filtres en listes déroulantes validés.');

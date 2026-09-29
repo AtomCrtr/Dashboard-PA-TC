@@ -49,9 +49,9 @@ function reconstruireHistoriqueMes() {
 }
 
 function importerNouveauxFichiersMes_(parameters, masterIndex) {
-  if (!parameters.ID_DOSSIER_MES_A_DEPOSER) return { files: 0, rows: 0, errors: 0 };
+  const inputFolder = findMesInputFolder_(parameters);
+  if (!inputFolder) return { files: 0, rows: 0, errors: 0 };
 
-  const inputFolder = DriveApp.getFolderById(parameters.ID_DOSSIER_MES_A_DEPOSER);
   const archiveFolder = parameters.ID_DOSSIER_MES_ARCHIVES
     ? DriveApp.getFolderById(parameters.ID_DOSSIER_MES_ARCHIVES)
     : getOrCreateArchiveFolder_(inputFolder);
@@ -547,6 +547,33 @@ function appendImportLog_(file, status, rows, message) {
   setSheetValues_(sheet.getRange(sheet.getLastRow() + 1, 1, 1, 6), [[new Date(), file.getId(), file.getName(), status, rows, message]]);
 }
 
+// Dossier Drive où l'on dépose les extractions MES (aléas UPA / MEDU et NC).
+// L'ID enregistré dans PARAMETRES est prioritaire ; à défaut, le dossier nommé
+// « MES A DEPOSER PA » (ou « MES A DEPOSER ») est retrouvé une seule fois puis son
+// ID est mémorisé, afin de ne pas relancer une recherche Drive à chaque ouverture du dashboard.
+const MES_INPUT_FOLDER_NAMES = Object.freeze(['MES A DEPOSER PA', 'MES A DEPOSER']);
+
+function findMesInputFolderByName_() {
+  for (const name of MES_INPUT_FOLDER_NAMES) {
+    const folders = DriveApp.getFoldersByName(name);
+    if (folders.hasNext()) return folders.next();
+  }
+  return null;
+}
+
+function findMesInputFolder_(parameters) {
+  const configuredId = clean_((parameters || {}).ID_DOSSIER_MES_A_DEPOSER);
+  if (configuredId) return DriveApp.getFolderById(configuredId);
+  const folder = findMesInputFolderByName_();
+  if (!folder) return null;
+  try {
+    setParameterValue_('ID_DOSSIER_MES_A_DEPOSER', folder.getId());
+  } catch (error) {
+    console.warn(`ID du dossier « ${folder.getName()} » non mémorisé : ${error.message || error}`);
+  }
+  return folder;
+}
+
 function getOrCreateArchiveFolder_(inputFolder) {
   const folders = inputFolder.getFoldersByName('Archives');
   return folders.hasNext() ? folders.next() : inputFolder.createFolder('Archives');
@@ -555,10 +582,10 @@ function getOrCreateArchiveFolder_(inputFolder) {
 function getMesStatus_() {
   try {
     const parameters = getParameters_();
-    if (!parameters.ID_DOSSIER_MES_A_DEPOSER) {
+    const folder = findMesInputFolder_(parameters);
+    if (!folder) {
       return { configured: false, folderUrl: '', folderName: '', pendingFiles: 0, message: 'Cliquez sur le bouton à droite pour créer le dépôt Drive.' };
     }
-    const folder = DriveApp.getFolderById(parameters.ID_DOSSIER_MES_A_DEPOSER);
     const files = folder.getFiles();
     let pendingFiles = 0;
     while (files.hasNext()) {
@@ -590,11 +617,11 @@ function configurerDossierMes() {
       }
     }
 
-    const inputFolder = DriveApp.createFolder('MES_A_DEPOSER - Dashboard Machine PA');
-    const archiveFolder = inputFolder.createFolder('Archives');
+    const inputFolder = findMesInputFolderByName_() || DriveApp.createFolder(MES_INPUT_FOLDER_NAMES[0]);
+    const archiveFolder = getOrCreateArchiveFolder_(inputFolder);
     setParameterValue_('ID_DOSSIER_MES_A_DEPOSER', inputFolder.getId());
     setParameterValue_('ID_DOSSIER_MES_ARCHIVES', archiveFolder.getId());
-    SpreadsheetApp.getActive().toast('Dossier de dépôt MES créé dans Mon Drive.', 'Dashboard Machine', 8);
+    SpreadsheetApp.getActive().toast(`Dossier de dépôt MES configuré : ${inputFolder.getName()}`, 'Dashboard Machine', 8);
     return getMesStatus_();
   });
 }

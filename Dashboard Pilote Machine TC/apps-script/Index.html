@@ -139,16 +139,30 @@
       outline: none;
     }
     .field input:focus, .field select:focus { border-color: var(--teal); box-shadow: 0 0 0 2px rgba(92,147,189,.18); }
-    .station-picker { position: relative; }
-    .station-picker summary { display: flex; align-items: center; justify-content: space-between; height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); cursor: pointer; list-style: none; }
-    .station-picker summary::-webkit-details-marker { display: none; }
-    .station-picker summary::after { content: '▾'; color: var(--muted); }
-    .station-picker summary span { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-    .station-picker[open] summary { border-color: var(--teal); }
-    .station-options { position: absolute; z-index: 20; top: calc(100% + 4px); width: 100%; max-height: 224px; overflow: auto; padding: 6px; border: 1px solid var(--line); border-radius: 8px; background: #fff; box-shadow: 0 8px 24px rgba(18,24,32,.14); }
-    .station-options label { display: flex; align-items: center; gap: 9px; padding: 7px 8px; border-radius: 4px; color: var(--ink); font-size: 13px; text-transform: none; cursor: pointer; }
-    .station-options label:hover { background: var(--canvas); }
-    .station-options input { width: 16px; height: 16px; margin: 0; accent-color: var(--teal-dark); }
+    .multi-select { position: relative; }
+    .multi-select-toggle { display: flex; align-items: center; gap: 8px; width: 100%; height: 44px; padding: 0 12px; border: 1px solid #cbdadf; border-radius: 9px; background: rgba(255,255,255,.8); color: var(--ink); font: inherit; font-size: 14px; text-align: left; cursor: pointer; }
+    .multi-select-toggle:hover { background: #fff; border-color: #a9c1c9; }
+    .multi-select-toggle:focus-visible, .multi-select.open .multi-select-toggle { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(27,127,137,.14); }
+    .multi-select-toggle > span:first-child { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .multi-select-toggle::after { content: ''; width: 7px; height: 7px; margin: -4px 2px 0 0; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); transition: transform .15s ease; flex: none; }
+    .multi-select.open .multi-select-toggle::after { transform: rotate(225deg); margin-top: 4px; }
+    .multi-select.has-value .multi-select-toggle { border-color: var(--teal); background: #fff; font-weight: 600; }
+    .multi-select-count { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--teal-dark); color: #fff; font-size: 11px; line-height: 20px; text-align: center; }
+    .multi-select-panel { position: absolute; z-index: 30; top: calc(100% + 4px); left: 0; width: max(100%, 260px); padding: 8px; border: 1px solid var(--line); border-radius: 10px; background: #fff; box-shadow: 0 12px 28px rgba(18,24,32,.16); }
+    .field .multi-select-search { width: 100%; height: 36px; border-radius: 7px; background: #fff; margin-bottom: 6px; padding: 0 10px; border: 1px solid var(--line); border-radius: 7px; font: inherit; font-size: 13px; outline: none; }
+    .multi-select-search:focus { border-color: var(--teal); }
+    .multi-select-actions { display: flex; gap: 6px; margin-bottom: 4px; }
+    .multi-select-actions button { flex: 1; height: 28px; border: 1px solid var(--line); border-radius: 6px; background: var(--canvas); color: var(--ink); font-size: 12px; cursor: pointer; }
+    .multi-select-actions button:hover { border-color: var(--teal); }
+    .multi-select-options { max-height: 260px; overflow: auto; overscroll-behavior: contain; }
+    .field .multi-select-options label { display: flex; min-height: 32px; line-height: 1.3; font-weight: 400; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 5px; color: var(--ink); font-size: 13px; letter-spacing: 0; text-transform: none; cursor: pointer; }
+    .field .multi-select-options label:hover { background: var(--canvas); }
+    .field .multi-select-options input { width: 16px; height: 16px; min-width: 16px; margin: 0; padding: 0; flex: none; border: 0; box-shadow: none; accent-color: var(--teal-dark); }
+    .field .multi-select-options .multi-select-group { font-weight: 700; margin-top: 4px; border-top: 1px solid var(--line); border-radius: 0; }
+    .multi-select-options .multi-select-group:first-child { border-top: 0; margin-top: 0; }
+    .field .multi-select-options .multi-select-child { padding-left: 30px; }
+    .multi-select-empty { padding: 10px 8px; color: var(--muted); font-size: 12px; }
+    .multi-select-apply { width: 100%; height: 36px; margin-top: 8px; }
     .filter-actions { display: grid; grid-template-columns: 1fr 44px; gap: 8px; margin-top: 5px; }
     .primary {
       border: 0;
@@ -622,12 +636,13 @@
     .review-heading:first-of-type { margin-top: 0; }
     .review-cost-controls { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 14px 0; }
     .review-cost-controls p { margin: 0; color: var(--muted); font-size: 12px; }
-    :root { --tone-open: #1f2933; --tone-recent: #2563c9; --tone-stale: #c8372d; --tone-unknown: #a7b0b1; }
+    :root { --tone-open: #2f6fb3; --tone-recent: #3f9a5f; --tone-recurring: #f2b27a; --tone-stale: #c8372d; --tone-unknown: #a7b0b1; }
     .action-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0 0 14px; padding: 10px 12px; list-style: none; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: 12px; color: var(--muted); }
     .action-legend li { display: inline-flex; align-items: center; gap: 7px; }
     .action-legend .swatch { width: 12px; height: 12px; border-radius: 3px; flex: none; }
     .action-legend .tone-open { background: var(--tone-open); }
     .action-legend .tone-recent { background: var(--tone-recent); }
+    .action-legend .tone-recurring { background: var(--tone-recurring); }
     .action-legend .tone-stale { background: var(--tone-stale); }
     .action-legend .tone-unknown { background: var(--tone-unknown); }
     .action-legend b { color: var(--ink); font-variant-numeric: tabular-nums; }
@@ -745,11 +760,11 @@
               <button type="button" data-days="all">Tout</button>
             </div>
           </div>
-          <div class="field"><label for="family">Famille</label><input id="family" type="search" list="familySuggestions" placeholder="Rechercher une famille"><datalist id="familySuggestions"></datalist></div>
+          <div class="field"><label id="stationLabel">Postes TC</label><div class="multi-select" id="stationPicker" data-filter="station" data-all-label="Tous les postes" data-group="station"><button type="button" class="multi-select-toggle" aria-haspopup="true" aria-expanded="false" aria-labelledby="stationLabel stationSummary"><span id="stationSummary">Tous les postes</span><span class="multi-select-count" hidden></span></button><div class="multi-select-panel" hidden><input type="search" class="multi-select-search" placeholder="Rechercher un poste" aria-label="Rechercher un poste" autocomplete="off"><div class="multi-select-actions"><button type="button" data-multi-action="all">Tout cocher</button><button type="button" data-multi-action="none">Tout décocher</button></div><div class="multi-select-options" id="stationOptions" role="group" aria-labelledby="stationLabel"></div><button type="button" class="primary multi-select-apply" data-multi-action="apply">Appliquer</button></div></div></div>
+          <div class="field"><label id="familyLabel">Famille</label><div class="multi-select" id="familyPicker" data-filter="family" data-all-label="Toutes les familles"><button type="button" class="multi-select-toggle" aria-haspopup="true" aria-expanded="false" aria-labelledby="familyLabel familySummary"><span id="familySummary">Toutes les familles</span><span class="multi-select-count" hidden></span></button><div class="multi-select-panel" hidden><input type="search" class="multi-select-search" placeholder="Rechercher une famille" aria-label="Rechercher une famille" autocomplete="off"><div class="multi-select-actions"><button type="button" data-multi-action="all">Tout cocher</button><button type="button" data-multi-action="none">Tout décocher</button></div><div class="multi-select-options" id="familyOptions" role="group" aria-labelledby="familyLabel"></div><button type="button" class="primary multi-select-apply" data-multi-action="apply">Appliquer</button></div></div></div>
           <div class="field"><label for="source">Origine des données</label><select id="source"><option value="">Toutes les sources</option></select></div>
-          <div class="field"><label for="immo">IMMO</label><input id="immo" type="search" placeholder="Ex. 1710288"></div>
-          <div class="field"><label id="stationLabel">Postes TC</label><details class="station-picker" id="stationPicker"><summary aria-labelledby="stationLabel stationSummary"><span id="stationSummary">Tous les postes</span></summary><div class="station-options" id="stationOptions" role="group" aria-labelledby="stationLabel"></div></details></div>
-          <div class="field"><label for="msn">MSN (avion)</label><input id="msn" type="search" list="msnSuggestions" placeholder="Ex. 806"><datalist id="msnSuggestions"></datalist></div>
+          <div class="field"><label id="immoLabel">IMMO</label><div class="multi-select" id="immoPicker" data-filter="immo" data-all-label="Tous les IMMO"><button type="button" class="multi-select-toggle" aria-haspopup="true" aria-expanded="false" aria-labelledby="immoLabel immoSummary"><span id="immoSummary">Tous les IMMO</span><span class="multi-select-count" hidden></span></button><div class="multi-select-panel" hidden><input type="search" class="multi-select-search" placeholder="Rechercher un IMMO" aria-label="Rechercher un IMMO" autocomplete="off"><div class="multi-select-actions"><button type="button" data-multi-action="all">Tout cocher</button><button type="button" data-multi-action="none">Tout décocher</button></div><div class="multi-select-options" id="immoOptions" role="group" aria-labelledby="immoLabel"></div><button type="button" class="primary multi-select-apply" data-multi-action="apply">Appliquer</button></div></div></div>
+          <div class="field"><label id="msnLabel">MSN (avion)</label><div class="multi-select" id="msnPicker" data-filter="msn" data-all-label="Tous les MSN"><button type="button" class="multi-select-toggle" aria-haspopup="true" aria-expanded="false" aria-labelledby="msnLabel msnSummary"><span id="msnSummary">Tous les MSN</span><span class="multi-select-count" hidden></span></button><div class="multi-select-panel" hidden><input type="search" class="multi-select-search" placeholder="Rechercher un MSN" aria-label="Rechercher un MSN" autocomplete="off"><div class="multi-select-actions"><button type="button" data-multi-action="all">Tout cocher</button><button type="button" data-multi-action="none">Tout décocher</button></div><div class="multi-select-options" id="msnOptions" role="group" aria-labelledby="msnLabel"></div><button type="button" class="primary multi-select-apply" data-multi-action="apply">Appliquer</button></div></div></div>
           <div class="field"><label for="from">Depuis</label><input id="from" type="date"></div>
           <div class="field"><label for="to">Jusqu’à</label><input id="to" type="date"></div>
           <div class="filter-actions">
@@ -832,9 +847,10 @@
         </div>
         <ul class="action-legend" id="actionPlanLegend" aria-label="Légende du suivi plan d’actions">
           <li class="legend-title">Couleur des barres = suivi dans les plans MFT TC</li>
+          <li><span class="swatch tone-recent" aria-hidden="true"></span>Action clôturée et prise en compte (moins de 6 mois) <b data-action-count="TERMINEE_RECENTE"></b></li>
           <li><span class="swatch tone-open" aria-hidden="true"></span>Action ouverte / en cours <b data-action-count="EN_COURS"></b></li>
-          <li><span class="swatch tone-recent" aria-hidden="true"></span>Action terminée depuis moins de 6 mois <b data-action-count="TERMINEE_RECENTE"></b></li>
-          <li><span class="swatch tone-stale" aria-hidden="true"></span>Aucune action, action reportée ou clôturée depuis plus de 6 mois <b data-action-count="NON_TRAITEE"></b></li>
+          <li><span class="swatch tone-recurring" aria-hidden="true"></span>Clôturée depuis plus de 6 mois et le problème revient <b data-action-count="CLOTUREE_ANCIENNE"></b></li>
+          <li><span class="swatch tone-stale" aria-hidden="true"></span>Aucune action (non prise en compte, reportée ou abandonnée) <b data-action-count="NON_TRAITEE"></b></li>
           <li><span class="swatch tone-unknown" aria-hidden="true"></span>Suivi indisponible</li>
         </ul>
         <section class="dashboard-grid" id="reviewDashboard">
@@ -1028,7 +1044,7 @@
       document.getElementById('filters').addEventListener('submit', event => { event.preventDefault(); reloadCurrentView(); });
       document.getElementById('filters').addEventListener('input', updateActiveFilterCount_);
       document.getElementById('filters').addEventListener('change', updateActiveFilterCount_);
-      document.getElementById('stationOptions').addEventListener('change', updateStationSummary);
+      initMultiSelects_();
       document.getElementById('filterToggle').addEventListener('click', toggleFiltersPanel_);
       document.getElementById('reset').addEventListener('click', resetFilters);
       document.getElementById('refreshData').addEventListener('click', refreshSources);
@@ -1319,7 +1335,7 @@
       const actionCostNote = document.getElementById('reviewActionCostQualityNote');
       if (actionCostQuality.status === 'CALCULABLE') {
         actionCostValue.textContent = `${formatDecimal(actionCostQuality.untreatedPercentage)} %`;
-        actionCostNote.textContent = `${formatCurrency(actionCostQuality.untreatedCost)} en rouge / ${formatCurrency(actionCostQuality.classifiedCost)} · en cours ${formatCurrency(actionCostQuality.inProgressCost)} · terminé < 6 mois ${formatCurrency(actionCostQuality.recentlyClosedCost)}${actionCostQuality.unknownCost ? ` · ${formatCurrency(actionCostQuality.unknownCost)} non classifiés` : ''}`;
+        actionCostNote.textContent = `${formatCurrency(actionCostQuality.untreatedCost)} non couverts / ${formatCurrency(actionCostQuality.classifiedCost)} · sans action ${formatCurrency(actionCostQuality.noActionCost)} · récurrents ${formatCurrency(actionCostQuality.recurringCost)} · en cours ${formatCurrency(actionCostQuality.inProgressCost)} · clôturés ${formatCurrency(actionCostQuality.recentlyClosedCost)}${actionCostQuality.unknownCost ? ` · ${formatCurrency(actionCostQuality.unknownCost)} non classifiés` : ''}`;
       } else if (actionCostQuality.status === 'VIDE') {
         actionCostValue.textContent = '–';
         actionCostNote.textContent = 'Aucun coût NC + MES par famille sur la période';
@@ -1584,7 +1600,9 @@
     }
 
     function populateSourceOptions(options) {
-      if (options.families) fillDatalist('familySuggestions', options.families);
+      if (options.families) fillMultiSelect_('family', options.families);
+      if (options.immos) fillMultiSelect_('immo', options.immos);
+      if (options.msns) fillMultiSelect_('msn', options.msns);
     }
 
     function sourceScopeText_(source, origin) {
@@ -1988,9 +2006,10 @@
         return table;
       };
       const actionPlanTones = {
-        EN_COURS: { color: '#1f2933', label: 'action ouverte / en cours' },
-        TERMINEE_RECENTE: { color: '#2563c9', label: 'action terminée depuis moins de 6 mois' },
-        NON_TRAITEE: { color: '#c8372d', label: 'aucune action en cours ni récente' },
+        EN_COURS: { color: '#2f6fb3', label: 'action ouverte / en cours' },
+        TERMINEE_RECENTE: { color: '#3f9a5f', label: 'action clôturée et prise en compte (moins de 6 mois)' },
+        CLOTUREE_ANCIENNE: { color: '#f2b27a', label: 'action clôturée depuis plus de 6 mois, le problème revient' },
+        NON_TRAITEE: { color: '#c8372d', label: 'aucune action (non prise en compte, reportée ou abandonnée)' },
         INCONNU: { color: '#a7b0b1', label: 'suivi indisponible' }
       };
       const actionPlanBarColor = status => (actionPlanTones[status] || actionPlanTones.INCONNU).color;
@@ -2365,17 +2384,184 @@
     function formatDetailDate_(value) { return value ? value.split('-').reverse().join('/') : '–'; }
 
     function populateOptions(options) {
-      fillDatalist('familySuggestions', options.families);
-      fillStationOptions(options.stations || []);
-      fillDatalist('msnSuggestions', options.msns || []);
+      fillMultiSelect_('station', options.stations || []);
+      fillMultiSelect_('family', options.families || []);
+      fillMultiSelect_('immo', options.immos || []);
+      fillMultiSelect_('msn', options.msns || []);
       fillSelect('source', options.sources, 'Toutes les sources', value => ({
         ALEA: 'Remontées production', NC: 'Non-conformités', ALEA_MES: 'Disponibilité MES UPA / MEDU'
       })[value] || value);
     }
 
-    function fillDatalist(id, values) {
-      const list = document.getElementById(id);
-      list.replaceChildren(...values.map(value => new Option(value, value)));
+    // Listes déroulantes à cases (Poste, Famille, IMMO, MSN) : recherche, tout cocher / décocher,
+    // regroupement des variantes de poste et bouton Appliquer. Un filtre vide est envoyé comme ''
+    // pour garder les mêmes clés de cache que le préchauffage serveur.
+    const MULTI_SELECT_KEYS = ['station', 'family', 'immo', 'msn'];
+
+    function initMultiSelects_() {
+      MULTI_SELECT_KEYS.forEach(key => {
+        const root = document.getElementById(`${key}Picker`);
+        if (!root) return;
+        const toggle = root.querySelector('.multi-select-toggle');
+        const search = root.querySelector('.multi-select-search');
+        toggle.addEventListener('click', () => setMultiSelectOpen_(root, !root.classList.contains('open')));
+        search.addEventListener('input', debounce(() => filterMultiSelectOptions_(root, search.value), 80));
+        search.addEventListener('keydown', event => {
+          if (event.key === 'Enter') { event.preventDefault(); applyMultiSelect_(root); }
+        });
+        root.addEventListener('click', event => {
+          const action = event.target.closest('[data-multi-action]');
+          if (!action) return;
+          if (action.dataset.multiAction === 'apply') { applyMultiSelect_(root); return; }
+          const checked = action.dataset.multiAction === 'all';
+          root.querySelectorAll('.multi-select-options label:not([hidden]) input[data-value]').forEach(input => { input.checked = checked; });
+          syncMultiSelectGroups_(root);
+          updateMultiSelectSummary_(key);
+        });
+        root.querySelector('.multi-select-options').addEventListener('change', event => {
+          const input = event.target;
+          if (input.dataset.group !== undefined && !input.dataset.value) {
+            root.querySelectorAll(`input[data-value][data-group="${CSS.escape(input.dataset.group)}"]`).forEach(child => { child.checked = input.checked; });
+          }
+          syncMultiSelectGroups_(root);
+          updateMultiSelectSummary_(key);
+        });
+      });
+      document.addEventListener('click', event => {
+        document.querySelectorAll('.multi-select.open').forEach(root => { if (!root.contains(event.target)) setMultiSelectOpen_(root, false); });
+      });
+      document.addEventListener('keydown', event => {
+        if (event.key !== 'Escape') return;
+        document.querySelectorAll('.multi-select.open').forEach(root => {
+          setMultiSelectOpen_(root, false);
+          root.querySelector('.multi-select-toggle').focus();
+        });
+      });
+    }
+
+    function setMultiSelectOpen_(root, open) {
+      if (open) document.querySelectorAll('.multi-select.open').forEach(other => { if (other !== root) setMultiSelectOpen_(other, false); });
+      root.classList.toggle('open', open);
+      root.querySelector('.multi-select-panel').hidden = !open;
+      root.querySelector('.multi-select-toggle').setAttribute('aria-expanded', String(open));
+      if (open) {
+        const search = root.querySelector('.multi-select-search');
+        search.value = '';
+        filterMultiSelectOptions_(root, '');
+        search.focus();
+      }
+    }
+
+    function applyMultiSelect_(root) {
+      setMultiSelectOpen_(root, false);
+      updateActiveFilterCount_();
+      reloadCurrentView();
+    }
+
+    function stationGroupKey_(value) {
+      const match = String(value).match(/(\d{3})/);
+      return match ? `Poste ${match[1]}` : 'Autres postes';
+    }
+
+    function fillMultiSelect_(key, values) {
+      const root = document.getElementById(`${key}Picker`);
+      if (!root) return;
+      const container = root.querySelector('.multi-select-options');
+      const selected = new Set(multiSelectValues_(key));
+      const unique = [...new Set((values || []).map(value => String(value)).filter(Boolean))];
+      selected.forEach(value => { if (!unique.includes(value)) unique.push(value); });
+      unique.sort((left, right) => left.localeCompare(right, 'fr', { numeric: true, sensitivity: 'base' }));
+      const option = (value, group, child) => {
+        const label = document.createElement('label');
+        if (child) label.className = 'multi-select-child';
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.dataset.value = value;
+        if (group !== null) input.dataset.group = group;
+        input.checked = selected.has(value);
+        label.dataset.search = normalizeSearch_(value);
+        label.append(input, document.createTextNode(value));
+        return label;
+      };
+      const nodes = [];
+      if (root.dataset.group === 'station') {
+        const groups = new Map();
+        unique.forEach(value => {
+          const group = stationGroupKey_(value);
+          if (!groups.has(group)) groups.set(group, []);
+          groups.get(group).push(value);
+        });
+        groups.forEach((members, group) => {
+          if (members.length > 1) {
+            const header = document.createElement('label');
+            header.className = 'multi-select-group';
+            header.dataset.search = normalizeSearch_(`${group} ${members.join(' ')}`);
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.dataset.group = group;
+            header.append(input, document.createTextNode(`${group} (toutes variantes)`));
+            nodes.push(header, ...members.map(value => option(value, group, true)));
+          } else {
+            nodes.push(option(members[0], null, false));
+          }
+        });
+      } else {
+        unique.forEach(value => nodes.push(option(value, null, false)));
+      }
+      if (!nodes.length) {
+        const empty = document.createElement('div');
+        empty.className = 'multi-select-empty';
+        empty.textContent = 'Aucune valeur disponible';
+        nodes.push(empty);
+      }
+      container.replaceChildren(...nodes);
+      syncMultiSelectGroups_(root);
+      updateMultiSelectSummary_(key);
+    }
+
+    function filterMultiSelectOptions_(root, query) {
+      const normalized = normalizeSearch_(query);
+      root.querySelectorAll('.multi-select-options label').forEach(label => {
+        label.hidden = Boolean(normalized) && !label.dataset.search.includes(normalized);
+      });
+    }
+
+    function syncMultiSelectGroups_(root) {
+      root.querySelectorAll('.multi-select-group input').forEach(header => {
+        const children = [...root.querySelectorAll(`input[data-value][data-group="${CSS.escape(header.dataset.group)}"]`)];
+        const checked = children.filter(child => child.checked).length;
+        header.checked = checked > 0 && checked === children.length;
+        header.indeterminate = checked > 0 && checked < children.length;
+      });
+    }
+
+    function multiSelectValues_(key) {
+      return [...document.querySelectorAll(`#${key}Options input[data-value]:checked`)].map(input => input.dataset.value);
+    }
+
+    function updateMultiSelectSummary_(key) {
+      const root = document.getElementById(`${key}Picker`);
+      if (!root) return;
+      const selected = multiSelectValues_(key);
+      const summary = document.getElementById(`${key}Summary`);
+      const count = root.querySelector('.multi-select-count');
+      let text = root.dataset.allLabel;
+      if (selected.length && root.dataset.group === 'station') {
+        const fullGroups = [...root.querySelectorAll('.multi-select-group input')].filter(input => input.checked).map(input => input.dataset.group);
+        const rest = selected.filter(value => !fullGroups.includes(stationGroupKey_(value)) || !root.querySelector(`.multi-select-group input[data-group="${CSS.escape(stationGroupKey_(value))}"]`));
+        text = [...fullGroups, ...rest].join(', ');
+      } else if (selected.length) {
+        text = selected.length <= 2 ? selected.join(', ') : `${selected.length} sélectionnés`;
+      }
+      summary.textContent = text;
+      summary.title = selected.join(', ');
+      root.classList.toggle('has-value', selected.length > 0);
+      count.hidden = selected.length < 2;
+      count.textContent = String(selected.length);
+    }
+
+    function updateStationSummary() {
+      updateMultiSelectSummary_('station');
     }
 
     function fillSelect(id, values, allLabel, labelForValue) {
@@ -2386,30 +2572,13 @@
       if ([...select.options].some(option => option.value === current)) select.value = current;
     }
 
-    function fillStationOptions(values) {
-      const container = document.getElementById('stationOptions');
-      const selected = new Set(readFilters().station);
-      container.replaceChildren(...values.map(value => {
-        const label = document.createElement('label');
-        const input = document.createElement('input');
-        input.type = 'checkbox';
-        input.name = 'station';
-        input.value = value;
-        input.checked = selected.has(value);
-        label.append(input, document.createTextNode(value));
-        return label;
-      }));
-      updateStationSummary();
-    }
-
-    function updateStationSummary() {
-      const selected = readFilters().station;
-      document.getElementById('stationSummary').textContent = selected.length ? selected.join(', ') : 'Tous les postes';
-    }
-
     function readFilters() {
-      const filters = Object.fromEntries(['family', 'source', 'immo', 'msn', 'from', 'to'].map(id => [id, document.getElementById(id).value]));
-      filters.station = [...document.querySelectorAll('#stationOptions input:checked')].map(input => input.value);
+      const filters = Object.fromEntries(['source', 'from', 'to'].map(id => [id, document.getElementById(id).value]));
+      ['family', 'immo', 'msn'].forEach(key => {
+        const values = multiSelectValues_(key);
+        filters[key] = values.length ? values : '';
+      });
+      filters.station = multiSelectValues_('station');
       return filters;
     }
 
@@ -2438,8 +2607,8 @@
 
     function resetFilters() {
       document.getElementById('filters').reset();
-      document.querySelectorAll('#stationOptions input').forEach(input => { input.checked = false; });
-      updateStationSummary();
+      document.querySelectorAll('.multi-select-options input').forEach(input => { input.checked = false; input.indeterminate = false; });
+      MULTI_SELECT_KEYS.forEach(updateMultiSelectSummary_);
       window.sharedSourceFilter_ = '';
       configureSourceFilterForView_(activeView_());
       setPeriod('year', true);

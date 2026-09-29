@@ -61,6 +61,8 @@ package.json          Commande npm test
 
 Les documents importants sont accessibles directement : [guide d’installation](docs/INSTALLATION.md), [audit complet du 28 août 2026](docs/audits/AUDIT-2026-08-28.md), [audit du 27 août 2026](docs/audits/AUDIT-2026-08-27.md), [diagramme externe des flux](docs/architecture/ARCHITECTURE-DATA-FLOW.html), [source éditable de l’architecture](docs/architecture/ARCHITECTURE-DATA-FLOW.md), [audit du 20 août 2026](docs/audits/AUDIT-2026-08-20.md), [note de mise à jour MES](docs/notes/MISE-A-JOUR-MES-2026-08-24.txt), [référence métier NC](docs/references/remontees-aleas-machine-analyse-nc.pdf), [vue des données brutes](docs/references/donnees-brutes.png) et [tableau QlikSense](docs/references/tableau-qliksense.png).
 
+Les filtres **Poste**, **Famille**, **IMMO** et **MSN** sont des listes déroulantes à cases : recherche, « Tout cocher / Tout décocher », sélection multiple et bouton **Appliquer**. Les variantes d’un même poste (ex. `P280`, `P280 A`, `P280 - Vert`) sont regroupées sous « Poste 280 » et se cochent en une fois.
+
 Le panneau **Filtres** peut être replié pour libérer l’espace d’analyse. Sur desktop, le rail replié se rouvre temporairement au survol ou lorsque le clavier entre dans ses contrôles ; sur mobile, il fonctionne comme un accordéon. Son état est mémorisé et son bouton indique le nombre de filtres actifs. Chaque graphique dispose également d’un mode focus agrandi, refermable par son bouton, le fond ou la touche `Échap`.
 
 Les fichiers de [data/samples](data/samples) servent uniquement à l’analyse locale et aux recettes. Les données de production sont lues depuis Google Drive par Apps Script.
@@ -138,18 +140,21 @@ Les barres des graphiques « Coût par famille » et « Coût par IMMO » sont c
 
 | Couleur | Signification |
 | --- | --- |
-| Noir | Au moins une action ouverte ou en cours (`Open`, `Due`, `En cours`, statut vide d’une action récente) |
-| Bleu | Aucune action ouverte, mais une action terminée dans les 6 derniers mois |
-| Rouge | Aucune action, action reportée/abandonnée, ou dernière action clôturée depuis plus de 6 mois |
+| Vert | Action clôturée et prise en compte depuis moins de 6 mois |
+| Bleu | Au moins une action ouverte ou en cours (`Open`, `Due`, `En cours`, statut vide d’une action récente) |
+| Orange pastel | Dernière action clôturée depuis plus de 6 mois alors que la machine génère de nouveau des coûts : le problème revient |
+| Rouge | Aucune action (non prise en compte), ou action seulement reportée / abandonnée |
 | Gris | Plan illisible ou incomplet : statut inconnu |
+
+Si plusieurs actions portent sur la même machine : bleu > vert > orange > rouge.
 
 La date de clôture n’existe pas dans les onglets datés du plan : elle est reconstituée à partir de l’historique. Le script lit les onglets des 6 derniers mois et l’onglet précédent ; une action est datée à la première réunion où elle passe à `Done`. Une action déjà terminée dans le premier onglet lu est datée par la dernière date de son commentaire, puis par son échéance. Une action ouverte qui disparaît du plan est considérée close à la réunion suivante. Si le classeur ne contient plus d’onglets datés, la table `MFT_ACTIONS_OFFICIEL` et sa colonne `DATE_CLOTURE` sont utilisées.
 
-Le KPI « Coûts non traités » donne la part des coûts NC + MES par famille en rouge ; sa note détaille les montants en noir (en cours) et en bleu (terminés depuis moins de 6 mois). L’analyse détaillée des plans et les recommandations d’organisation sont dans [l’analyse du 29 septembre 2026](../Dashboard%20Pilote%20Machine%20PA/docs/audits/ANALYSE-PLANS-ACTIONS-2026-09-29.md).
+Le KPI « Coûts non traités » donne la part des coûts NC + MES par famille en rouge ou en orange ; sa note détaille les montants sans action, récurrents, en cours et clôturés. L’analyse détaillée des plans et les recommandations d’organisation sont dans [l’analyse du 29 septembre 2026](../Dashboard%20Pilote%20Machine%20PA/docs/audits/ANALYSE-PLANS-ACTIONS-2026-09-29.md).
 
 ## Import MES
 
-Le menu **Créer le dossier de dépôt MES** crée un dossier Drive d’entrée et un sous-dossier `Archives`. Les formats CSV, XLSX et Google Sheets sont reconnus. Après un import réussi, le fichier est déplacé dans `Archives` et enregistré dans `JOURNAL_IMPORT`.
+Les extractions MES (aléas UPA / MEDU et NC) se déposent dans le dossier Drive **MES A DEPOSER**. Le script utilise l’ID `ID_DOSSIER_MES_A_DEPOSER` s’il est renseigné ; sinon il retrouve le dossier `MES A DEPOSER TC`, puis `MES A DEPOSER`, et mémorise son ID. Le menu **Créer le dossier de dépôt MES** réutilise ce dossier s’il existe, ou le crée, avec son sous-dossier `Archives`. Les formats CSV, XLSX et Google Sheets sont reconnus. Après un import réussi, le fichier est déplacé dans `Archives` et enregistré dans `JOURNAL_IMPORT`.
 
 La nouvelle base XLSX doit être importée manuellement dans ce dossier. Le script conserve uniquement `Unité = Structure TC A350`, transforme `03-Moyens / 0328 UPA MEDU` en `ALEA_MES` et `01-Matière / 0111 Articles Composants Pieces` en `NC`. `Poste / MFT`, `MSN_MES`, `N° NC`, `NB_NC` et `Temps aléas` sont conservés lorsqu’ils sont disponibles. Toutes les NC MES sont écrites dans `NC_MES_PREVISIONNELLES` afin que la préparation qualité puisse utiliser `N° NC` dans SAP et compléter l’IMMO ou la famille avant validation.
 

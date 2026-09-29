@@ -747,8 +747,8 @@ function rawRecordMatchesQualityFilters_(record, aliases, filters, master, sourc
   const family = rawRecordFamily_(record, source, master, aliases);
   const immos = splitImmos_(pick_(record, aliases.immo)).filter(Boolean);
   const station = canonicalStation_(clean_(pick_(record, aliases.station)) || sourceMachineName_(record, aliases));
-  if (requested.family && !normalizeHeader_(family).includes(normalizeHeader_(requested.family))) return false;
-  if (requested.immo && !immos.some(immo => immo.toUpperCase().includes(String(requested.immo).toUpperCase()))) return false;
+  if (!filterValuesMatch_([family], requested.family, true)) return false;
+  if (!filterValuesMatch_(immos, requested.immo, true)) return false;
   if (!stationMatchesFilter_(station, requested.station)) return false;
   const date = parseDate_(pick_(record, aliases.date));
   if (requested.from && (!date || date < parseFilterDate_(requested.from, false))) return false;
@@ -868,10 +868,10 @@ function buildRawSourceQualityAudit_(source, label, origin, records, master, fil
 
 function mesQualityRowMatchesFilters_(row, filters, family, immos) {
   const requested = filters || {};
-  if (requested.family && !normalizeHeader_(family).includes(normalizeHeader_(requested.family))) return false;
-  if (requested.immo && !(immos || []).some(immo => immo.toUpperCase().includes(String(requested.immo).toUpperCase()))) return false;
+  if (!filterValuesMatch_([family], requested.family, true)) return false;
+  if (!filterValuesMatch_(immos || [], requested.immo, true)) return false;
   if (!stationMatchesFilter_(row.POSTE, requested.station)) return false;
-  if (requested.msn && !clean_(row.MSN).includes(clean_(requested.msn))) return false;
+  if (!filterValuesMatch_([row.MSN], requested.msn, true)) return false;
   const date = parseDate_(row.DATE);
   if (requested.from && (!date || date < parseFilterDate_(requested.from, false))) return false;
   if (requested.to && (!date || date > parseFilterDate_(requested.to, true))) return false;
@@ -1537,7 +1537,7 @@ function uniqueDetailValues_(values) {
 function collectSourceAnalysisOptions_(rows, index, source) {
   const sourceRows = rows.filter(row => row[index.SOURCE] === source);
   const unique = column => [...new Set(sourceRows.map(row => clean_(row[index[column]])).filter(Boolean))].sort();
-  return { families: unique('FAMILLE'), stations: stationFilterOptions_(), categories: unique('CATEGORIE') };
+  return { families: unique('FAMILLE'), stations: stationFilterOptions_(), categories: unique('CATEGORIE'), immos: unique('IMMO').filter(isPlausibleImmo_), msns: unique('MSN') };
 }
 
 function sourceAnalysisDateKey_(value) {
@@ -2958,17 +2958,30 @@ function mergeFactRows_(current, incoming) {
 
 function collectFilterOptions_(rows, index) {
   const unique = column => [...new Set(rows.map(row => clean_(row[index[column]])).filter(Boolean))].sort();
-  return { families: unique('FAMILLE'), sources: unique('SOURCE'), stations: stationFilterOptions_(), msns: unique('MSN') };
+  return { families: unique('FAMILLE'), sources: unique('SOURCE'), stations: stationFilterOptions_(), msns: unique('MSN'), immos: unique('IMMO').filter(isPlausibleImmo_) };
+}
+
+// Filtre Famille / IMMO / MSN : une liste (listes déroulantes) sélectionne des valeurs exactes ;
+// un texte seul (ancien champ de recherche) garde la correspondance partielle si partialText.
+function filterValuesMatch_(actualValues, requested, partialText) {
+  const actualKeys = (actualValues || []).map(value => normalizeHeader_(value)).filter(Boolean);
+  if (Array.isArray(requested)) {
+    const requestedKeys = requested.map(value => normalizeHeader_(value)).filter(Boolean);
+    return !requestedKeys.length || requestedKeys.some(key => actualKeys.includes(key));
+  }
+  const requestedKey = normalizeHeader_(requested);
+  if (!requestedKey) return true;
+  return actualKeys.some(key => partialText ? key.includes(requestedKey) : key === requestedKey);
 }
 
 function matchesFilters_(row, index, filters) {
-  if (filters.family && !normalizeHeader_(row[index.FAMILLE]).includes(normalizeHeader_(filters.family))) return false;
+  if (!filterValuesMatch_([row[index.FAMILLE]], filters.family, true)) return false;
   if (filters.source && row[index.SOURCE] !== filters.source) return false;
   if (filters.site && row[index.SITE] !== filters.site) return false;
   if (filters.section && row[index.SECTION] !== filters.section) return false;
-  if (filters.immo && !String(row[index.IMMO] || '').toUpperCase().includes(String(filters.immo).toUpperCase())) return false;
+  if (!filterValuesMatch_([row[index.IMMO]], filters.immo, true)) return false;
   if (!stationMatchesFilter_(row[index.POSTE], filters.station)) return false;
-  if (filters.msn && normalizeHeader_(row[index.MSN]) !== normalizeHeader_(filters.msn)) return false;
+  if (!filterValuesMatch_([row[index.MSN]], filters.msn, false)) return false;
   if (filters.category && !normalizeHeader_(row[index.CATEGORIE]).includes(normalizeHeader_(filters.category))) return false;
   const date = parseDate_(row[index.DATE]);
   if (filters.from && (!date || date < parseFilterDate_(filters.from, false))) return false;
@@ -3247,7 +3260,7 @@ function readActionPlanCoverage_() {
   if (!sources.length) return unavailable;
 
   const cache = typeof CacheService !== 'undefined' ? CacheService.getScriptCache() : null;
-  const cacheKey = `tc-action-coverage-v2-${digest_(sources.map(source => source.id).join('|'))}`;
+  const cacheKey = `tc-action-coverage-v3-${digest_(sources.map(source => source.id).join('|'))}`;
   const cached = cache ? readJsonCache_(cache, cacheKey, 'suivi des plans TC') : null;
   if (cached) return cached;
 
@@ -3315,18 +3328,19 @@ function listTcActionPlanSheets_(spreadsheet) {
   return candidates;
 }
 
-// Légende de l'item 2 (revue Pilotage) :
-// - noir  : au moins une action ouverte / en cours sur l'IMMO ou la famille ;
-// - bleu  : aucune action ouverte, mais une action terminée dans les 6 derniers mois ;
-// - rouge : aucune action (non prise en compte), action reportée/abandonnée ou clôturée depuis plus de 6 mois ;
-// - gris  : plan illisible ou incomplet, statut inconnu.
+// Légende de l'item 2 (revue Pilotage). Une barre n'apparaît que si la machine a des coûts sur la période :
+// - EN_COURS          (bleu)          : au moins une action ouverte / en cours sur l'IMMO ou la famille ;
+// - TERMINEE_RECENTE  (vert)          : action clôturée et prise en compte dans les 6 derniers mois ;
+// - CLOTUREE_ANCIENNE (orange pastel) : action clôturée depuis plus de 6 mois et le problème revient ;
+// - NON_TRAITEE       (rouge)         : aucune action, ou action seulement reportée / abandonnée ;
+// - INCONNU           (gris)          : plan illisible ou incomplet.
 const ACTION_PLAN_RECENT_MONTHS = 6;
-const ACTION_PLAN_TONE_RANK = Object.freeze({ EN_COURS: 3, TERMINEE_RECENTE: 2, NON_TRAITEE: 1 });
+const ACTION_PLAN_TONE_RANK = Object.freeze({ EN_COURS: 4, TERMINEE_RECENTE: 3, CLOTUREE_ANCIENNE: 2, NON_TRAITEE: 1 });
 
 function actionPlanCoverageFromActions_(actions, referenceDate) {
   const coverage = {
     immos: {}, families: {}, unknownImmos: {}, unknownFamilies: {},
-    summary: { actions: 0, EN_COURS: 0, TERMINEE_RECENTE: 0, NON_TRAITEE: 0, INCONNU: 0 },
+    summary: { actions: 0, EN_COURS: 0, TERMINEE_RECENTE: 0, CLOTUREE_ANCIENNE: 0, NON_TRAITEE: 0, INCONNU: 0 },
     recentMonths: ACTION_PLAN_RECENT_MONTHS,
     referenceDate: toIsoDate_(referenceDate || new Date())
   };
@@ -3360,7 +3374,7 @@ function actionPlanToneForAction_(action, recentLimit) {
   if (status === 'OPEN') return 'EN_COURS';
   if (status === 'DONE') {
     const closedAt = parseDate_(action.closedAt);
-    return closedAt && closedAt >= recentLimit ? 'TERMINEE_RECENTE' : 'NON_TRAITEE';
+    return closedAt && closedAt >= recentLimit ? 'TERMINEE_RECENTE' : 'CLOTUREE_ANCIENNE';
   }
   if (status === 'DROPPED') return 'NON_TRAITEE';
   return 'INCONNU';
@@ -3501,7 +3515,7 @@ function actionPlanStatusForKey_(label, dimension, coverage) {
   const key = normalizeHeader_(clean_(label).replace(/\.0+$/, ''));
   if (identities[key] === 'EN_COURS' || identities[key] === 'TERMINEE_RECENTE') return identities[key];
   if (unknownIdentities[key]) return 'INCONNU';
-  if (identities[key] === 'NON_TRAITEE') return 'NON_TRAITEE';
+  if (identities[key]) return identities[key];
   return coverage.complete ? 'NON_TRAITEE' : 'INCONNU';
 }
 
@@ -3517,6 +3531,8 @@ function buildActionPlanCostQuality_(rows, coverage, hasCompleteTotals) {
     treatedCost: 0,
     inProgressCost: 0,
     recentlyClosedCost: 0,
+    recurringCost: 0,
+    noActionCost: 0,
     untreatedCost: 0,
     unknownCost: 0,
     untreatedPercentage: null,
@@ -3532,10 +3548,12 @@ function buildActionPlanCostQuality_(rows, coverage, hasCompleteTotals) {
     const status = actionPlanStatusForKey_(row.label, 'family', coverage);
     if (status === 'EN_COURS') quality.inProgressCost += cost;
     else if (status === 'TERMINEE_RECENTE') quality.recentlyClosedCost += cost;
-    else if (status === 'NON_TRAITEE') quality.untreatedCost += cost;
+    else if (status === 'CLOTUREE_ANCIENNE') quality.recurringCost += cost;
+    else if (status === 'NON_TRAITEE') quality.noActionCost += cost;
     else quality.unknownCost += cost;
   });
   quality.treatedCost = quality.inProgressCost + quality.recentlyClosedCost;
+  quality.untreatedCost = quality.recurringCost + quality.noActionCost;
   quality.classifiedCost = quality.treatedCost + quality.untreatedCost;
   quality.untreatedPercentage = quality.classifiedCost
     ? quality.untreatedCost * 100 / quality.classifiedCost
