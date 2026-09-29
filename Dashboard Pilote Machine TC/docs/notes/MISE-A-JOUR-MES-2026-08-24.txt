@@ -1,0 +1,10 @@
+Nouvelle vrais bases de données avec nos données NC.
+On se basait trop sur un seul groupe de résolution alors que les NC étaient ailleurs...
+Regarde bien la colonne 5M avec écrit Moyens et Matière. 
+Si tu regarde 03-Moyens dans colonne object il y a écrit 0328 UPA MEDU. 
+Et pour voir nos NC il y écrit 01-Matière avec dans la colonne object écrit 0111 Articles Composants Pieces 
+Et pour unité bien prendre Structure PA A350 dans la colonne unité, pour t'aider tu as la colonne Poste / MFT
+
+===> Donc à remplacé l'échantillon-données "exemple-export-mes-qlik" par le fichier 71655b4e-82f0-4f01-88f8-d40f946e3479
+
+Celui-ci est notre véritable source. Donc cela va modifier nos codes pour l'intégrer. On garde toujours un import manuel.

@@ -1,0 +1,126 @@
+const APP = Object.freeze({
+  scope: Object.freeze({
+    label: 'Tronçon Central (TC)',
+    sections: Object.freeze(['TC', 'Tronçon Central', 'Troncon Central', 'Structure TC A350']),
+    planningLabel: 'A350 Structure TC',
+    planningCode: 'TC STR',
+    // Une liste vide accepte tous les postes renseignés du périmètre TC.
+    stations: Object.freeze([]),
+    machineCategory: 'Perçage'
+  }),
+  sheets: Object.freeze({
+    usageGuide: 'GUIDE_UTILISATION',
+    parameters: 'PARAMETRES',
+    facts: 'FAITS_IMMO',
+    factsArchive: 'FAITS_IMMO_ARCHIVES',
+    controls: 'CONTROLES',
+    importLog: 'JOURNAL_IMPORT',
+    mesStaging: 'STG_MES',
+    mesPreNc: 'NC_MES_PREVISIONNELLES',
+    mftActions: 'ACTIONS_MFT',
+    mftOfficialActions: 'MFT_ACTIONS_OFFICIEL',
+    mftOfficialFollowUps: 'MFT_SUIVI_OFFICIEL',
+    mftOfficialMeetings: 'MFT_REUNIONS_OFFICIEL'
+  }),
+  sourceSheets: Object.freeze({
+    master: 'BDD_Master_amélio',
+    aleas: 'Remontées aléas production',
+    nc: 'Données NC TC'
+  }),
+  parameterDefaults: Object.freeze({
+    ID_FICHIER_MASTER: '',
+    ID_FICHIER_DOC_MARTIN: '1hmoC2X4iQv3fyAuZkUV2j57zWm57uu2O8saXuEaP4lw',
+    ID_FICHIER_ALEAS: '1rFeIB7i5cfZNvnx37O-NHi_fKXlp0SDFgOZkMIyk9Ws',
+    ID_FICHIER_NC: '1rFeIB7i5cfZNvnx37O-NHi_fKXlp0SDFgOZkMIyk9Ws',
+    ID_FICHIER_PLANNING_MSN: '1UFoE2rUJmJy_KM77JRUAAl_ffhgz9rh7JJt3wcUVf_Y',
+    ID_FICHIER_TAUX_PERCAGE: '1vlbPl6jxtZOa--C6W7AQLbKRBvjUbGf-JaX2L__fUrk',
+    ID_FICHIER_PLAN_ACTIONS_MFT: '',
+    ID_FICHIER_PLAN_ACTIONS_TC_370: '1Ja20mLJJ7qI_xCNBqanOzc4Iu5tgzPdRG74Jjhv_fhU',
+    ID_FICHIER_PLAN_ACTIONS_TC_355_360_OSW: '1Y9wuDfQauZm-mRU8oCIxRPt2hw8nrRJmu3z_BFPbm6M',
+    ID_DOSSIER_MES_A_DEPOSER: '',
+    ID_DOSSIER_MES_ARCHIVES: '',
+    COUT_MOYEN_ALEA_EUR: '',
+    COUT_MOYEN_NC_EUR: '',
+    COUT_MOYEN_ALEA_MES_EUR: '',
+    COUT_HEURE_PERDUE_EUR: '116',
+    POIDS_ALEA: '1',
+    POIDS_NC: '5',
+    POIDS_ALEA_MES: '1'
+  }),
+  factsHeaders: Object.freeze([
+    'ID_EVENEMENT', 'DATE', 'MOIS', 'SOURCE', 'IMMO', 'FAMILLE',
+    'TYPE_MACHINE', 'PROGRAMME', 'SITE', 'SECTION', 'POSTE', 'CATEGORIE',
+    'PROBLEME', 'QUANTITE', 'COUT_UNITAIRE_EUR', 'COUT_TOTAL_EUR',
+    'COUT_RENSEIGNE', 'POIDS_IMPACT', 'IMMO_DANS_MASTER', 'FICHIER_SOURCE',
+    'DATE_CHARGEMENT', 'TEMPS_PERDU_HEURES', 'RAPPROCHEMENT_MES',
+    'CATEGORIE_2', 'COMMENTAIRE', 'NC_NUMERO', 'NB_NC', 'MSN', 'COMMENTAIRE_QUALITE'
+  ]),
+  aliases: Object.freeze({
+    master: Object.freeze({
+      immo: ['Immo', 'IMMO', 'N° Immo', 'N°IMMO'],
+      equipment: ['Equipement', 'Équipement', 'Code équipement', 'Code equipement', 'ID équipement', 'ID equipement'],
+      family: ['Famille', 'Indication Famille'],
+      machineType: ['Type', 'Type de machine', 'Type Machine'],
+      category: ['Catégorie', 'Categorie'],
+      program: ['Programme'],
+      site: ['Site'],
+      section: ['Section'],
+      station: ['Jeu', 'Poste couleur', 'Poste couleurs', 'Station', 'Poste']
+    }),
+    aleas: Object.freeze({
+      date: ['Date'],
+      immo: ['IMMO', 'Immo', 'N° Immo'],
+      family: ['Famille', 'Indication Famille'],
+      machineType: ['Type de machine', 'Type Machine', 'Type'],
+      section: ['Section'],
+      station: ['Poste', 'Station'],
+      category: ['Catégorie Aléa', 'Categorie Alea'],
+      problem: ['Aléa', 'Alea'],
+      comment: ['Hypothèse cause', 'Hypothese cause', 'Commentaire'],
+      durationHours: ['Temps aléas', 'Tempas aléas', 'Temps aleas', 'Temps perdu', 'Temps perdu (h)', 'Durée', 'Duree'],
+      ncNumber: ['NC'],
+      ncCount: ['NB NC', 'Nb NC'],
+      quantity: ['Quantité', 'Quantite'],
+      eventId: ['Clé NC', 'Cle NC', 'Clé Aléa', 'Cle Alea']
+    }),
+    nc: Object.freeze({
+      date: ['Date NC', 'Date'],
+      immo: ['N° Immo', 'IMMO', 'Immo'],
+      family: ['Indication Famille', 'Famille'],
+      machineName: ['Nom de la machine', 'Nom machine', 'Machine', 'Machine PA', 'Libellé machine', 'Libelle machine'],
+      station: ['Poste couleur', 'Poste couleurs', 'Station', 'Poste', 'Machine'],
+      machineType: ['Type de machine', 'Type Machine', 'Type'],
+      section: ['Section', 'EAP', 'Zone'],
+      category: ['Typologie défaut', 'Typologie defaut'],
+      problem: ['Typologie défaut', 'Typologie defaut'],
+      comment: ['Commentaire', 'Commentaires'],
+      commentQuality: ['Commentaires Qualité', 'Commentaires qualite', 'Commentaire Qualité', 'Commentaire qualite'],
+      durationHours: ['Temps aléas', 'Tempas aléas', 'Temps aleas', 'Temps perdu', 'Temps perdu (h)', 'Durée', 'Duree'],
+      ncNumber: ['NC'],
+      ncCount: ['Nbr NC'],
+      msn: ['MSN'],
+      quantity: ['Qté', 'Quantité'],
+      eventId: ['Clé NC', 'Cle NC']
+    }),
+    mes: Object.freeze({
+      date: ['Date ouverture', 'Date d’ouverture', "Date d'ouverture", 'Date', 'Date aléa', 'Date alea', 'DATE_DEBUT'],
+      immo: ['ID équipement', 'ID equipement', 'Jigs and Tools', 'Jigs &Tools', 'Matériels', 'Materiels', 'IMMO', 'Immo', 'N° Immo', 'Numero immo'],
+      family: ['Famille', 'Indication Famille'],
+      machineType: ['Objet', 'Type de machine', 'Type Machine', 'Type'],
+      section: ['Unité', 'Unite', 'EAP', 'Section'],
+      station: ['Station physique MES', 'Poste / MFT', 'Poste/MFT', 'Station/MFT', 'Poste', 'Station'],
+      category: ['5M', 'Catégorie Aléa', 'Categorie Alea', 'Catégorie'],
+      object: ['Objet'],
+      attribute: ['Attribut'],
+      initialComment: ['Commentaire MES', 'Commentaire initial', 'Commentaire d’origine', 'Commentaire origine'],
+      problem: ['Attribut', 'Aléa', 'Alea', 'Défaut', 'Defaut', 'Description', 'Intitulés', 'Intitules', 'Commentaire corrigé', 'Commentaire initial', 'Commentaire MES'],
+      title: ['Intitulés', 'Intitules'],
+      status: ['Statut', 'Status'],
+      quantity: ['Quantité', 'Quantite', 'Nombre'],
+      durationHours: ['Temps aléas', 'Tempas aléas', 'Temps aleas', 'Temps perdu'],
+      eventId: ['ID ticket', 'Disruption ID', 'ID', 'ID Aléa', 'Id Alea', 'Clé', 'Cle'],
+      ncNumber: ['N° NC', 'N NC', 'NC'],
+      msn: ['MSN_MES', 'MSN MES', 'MSN']
+    })
+  })
+});
