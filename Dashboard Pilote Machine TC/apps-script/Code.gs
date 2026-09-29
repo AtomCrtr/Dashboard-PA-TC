@@ -795,7 +795,7 @@ function evaluateRawSourceRecord_(source, record, master, aliases) {
   if (source === 'ALEA') {
     if (!clean_(sourceSection) || !isInScope_(sourceSection)) {
       exclusionCode = 'SECTION_HORS_PERIMETRE';
-      exclusionLabel = 'Section source absente ou hors périmètre PA';
+      exclusionLabel = 'Section source absente ou hors périmètre TC';
     } else if (!sourceStation) {
       exclusionCode = 'POSTE_MANQUANT';
       exclusionLabel = 'Poste production absent';
@@ -816,7 +816,7 @@ function evaluateRawSourceRecord_(source, record, master, aliases) {
     exclusionLabel = 'IMMO master hors PA / Perçage';
   } else if (!isInScope_(sourceSection || eligibleMasterEntries[0].data.section || '')) {
     exclusionCode = 'SECTION_HORS_PERIMETRE';
-    exclusionLabel = 'Section source hors périmètre PA';
+    exclusionLabel = 'Section source hors périmètre TC';
   }
   return {
     immos, acceptedImmos, retainedImmos,
@@ -964,7 +964,7 @@ function buildMesSourceQualityAudit_(rows, master, filters) {
       exclusionLabel = /^.*A_VERIFIER$/.test(identity.method) ? 'Rapprochement MES ambigu ou à vérifier' : 'IMMO/famille MES non rapproché au master';
     } else if (!acceptedImmos.length) {
       exclusionCode = 'SECTION_HORS_PERIMETRE';
-      exclusionLabel = 'Section MES hors périmètre PA';
+      exclusionLabel = 'Section MES hors périmètre TC';
     }
     if (acceptedImmos.length && !excludedByComment && !workflowPending) {
       counter.retainedRows += 1;
@@ -1205,7 +1205,7 @@ function combinedAleaDetailRow_(row, index, source, master) {
     station: canonicalStation_(row[index.POSTE]),
     immo: immo || immos.join(' / '),
     immos,
-    family: family || commentIdentity.family,
+    family: family || commentIdentity.family || (master && immos.length === 1 ? clean_((master.byImmo[immos[0]] || {}).family) : ''),
     problem,
     category: clean_(row[index.CATEGORIE]),
     comment,
@@ -1869,7 +1869,11 @@ function appendStagedMesFacts_(target, rows, master, parameters) {
     if (isLegacyQlik && normalizeHeader_(row.TYPE_MACHINE) !== 'UPAMEDU') return;
     if (isLegacyQlik && !normalizeHeader_(row.SECTION).startsWith('TCA350STR')) return;
     const identity = resolveMesIdentity_(row.IMMO || row.IMMO_SOURCE, row.FAMILLE, row.COMMENTAIRE_INITIAL, master);
-    const immos = isMesIdentityImmoMethod_(identity.method) && identity.immos.length ? identity.immos : [''];
+    // Un IMMO saisi puis validé par la Qualité reste attribué même s'il manque au master.
+    const validatedImmo = source === 'NC' ? normalizeImmo_(clean_(row.IMMO_SAISI)) : '';
+    const immos = isMesIdentityImmoMethod_(identity.method) && identity.immos.length
+      ? identity.immos
+      : isPlausibleImmo_(validatedImmo) ? [validatedImmo] : [''];
     immos.forEach(immo => {
       const indexedMasterData = master.byImmo[immo] || {};
       const masterData = indexedMasterData.immo && isInScope_(indexedMasterData.section)
@@ -2627,9 +2631,12 @@ function isMissingMesImmo_(value) {
 }
 
 function resolveCommentFamily_(tokens, master) {
-  const familyTokens = commentFamilyTokens_(tokens);
-  const familyKeys = [...new Set(familyTokens.flatMap(token => master.familyIdentityOwners && master.familyIdentityOwners[token] || []))];
-  if (!familyKeys.length) return null;
+  const owners = master.familyIdentityOwners || {};
+  const matchedTokens = commentFamilyTokens_(tokens).filter(token => owners[token] && owners[token].length);
+  if (!matchedTokens.length) return null;
+  // Le jeton le plus long est le plus spécifique : « 208V3021 » l'emporte sur « V3021 », partagé par plusieurs familles.
+  const longest = Math.max(...matchedTokens.map(token => token.length));
+  const familyKeys = [...new Set(matchedTokens.filter(token => token.length === longest).flatMap(token => owners[token]))];
   const families = familyKeys.map(key => master.byFamilyKey[key]).filter(Boolean);
   if (!families.length) return null;
   const uniqueFamilies = [...new Map(families.map(data => [identityKey_(data.family), data])).values()];

@@ -497,9 +497,11 @@ function parseDurationHours_(value, options) {
   if (value instanceof Date && !Number.isNaN(value.getTime())) {
     return Math.max(0, value.getHours() + value.getMinutes() / 60 + value.getSeconds() / 3600);
   }
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return Math.max(0, value) * (settings.spreadsheetDays ? 24 : 1);
-  }
+  // Une durée Sheets est une fraction de jour : arrondie à la seconde pour éviter 0,4999999 h.
+  const toHours = number => settings.spreadsheetDays
+    ? Math.round(Math.max(0, number) * 86400) / 3600
+    : Math.max(0, number);
+  if (typeof value === 'number' && Number.isFinite(value)) return toHours(value);
   const text = clean_(value);
   if (!text) return 0;
   const duration = text.match(/^(?:(\d+)\s*[-.]\s*)?(\d{1,3}):(\d{2})(?::(\d{2}))?$/);
@@ -512,7 +514,7 @@ function parseDurationHours_(value, options) {
   }
   const numericText = text.replace(/\s/g, '').replace(',', '.');
   const numeric = Number(numericText);
-  if (Number.isFinite(numeric)) return Math.max(0, numeric) * (settings.spreadsheetDays ? 24 : 1);
+  if (Number.isFinite(numeric)) return toHours(numeric);
   return 0;
 }
 
@@ -549,12 +551,6 @@ function getOrCreateArchiveFolder_(inputFolder) {
   const folders = inputFolder.getFoldersByName('Archives');
   return folders.hasNext() ? folders.next() : inputFolder.createFolder('Archives');
 }
-
-function getOrCreateMesInputFolder_() {
-  const folders = DriveApp.getFoldersByName('MES A DEPOSER');
-  return folders.hasNext() ? folders.next() : DriveApp.createFolder('MES A DEPOSER');
-}
-  const inputFolder = getOrCreateMesInputFolder_();
 
 function getMesStatus_() {
   try {

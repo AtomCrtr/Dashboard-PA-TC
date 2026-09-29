@@ -11,7 +11,7 @@ const sources = scriptFiles.map(file => fs.readFileSync(path.join(root, 'apps-sc
 scriptFiles.forEach((file, index) => {
   new vm.Script(sources[index], { filename: file });
 });
-assert.match(sources[1], /function getDashboardData\(filters\) \{[\s\S]{0,500}const spreadsheet = SpreadsheetApp\.getActive\(\);/);
+assert.match(sources[1], /function getDashboardData\(filters(?:, publishedOnly)?\) \{[\s\S]{0,800}const spreadsheet = SpreadsheetApp\.getActive\(\);/);
 
 const html = fs.readFileSync(path.join(root, 'apps-script', 'Index.html'), 'utf8');
 const inlineScripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
@@ -43,7 +43,16 @@ const context = vm.createContext({
   }
 });
 vm.runInContext(sources.join('\n'), context, { filename: 'apps-script.bundle.js' });
-const evaluate = expression => vm.runInContext(expression, context);
+// Les objets créés dans le contexte vm ont leurs propres prototypes : on les clone
+// dans le contexte courant pour que assert.deepEqual compare seulement les valeurs.
+const toLocalRealm = value => {
+  try {
+    return structuredClone(value);
+  } catch (error) {
+    return value;
+  }
+};
+const evaluate = expression => toLocalRealm(vm.runInContext(expression, context));
 
 assert.equal(evaluate("isPlausibleImmo_('1710288')"), true);
 assert.equal(evaluate("isPlausibleImmo_('DOTATION')"), false);
@@ -274,7 +283,7 @@ const mergedAnalysisFacts = evaluate(`(() => {
   ], [
     row({ ID_EVENEMENT: 'ALEA-1', SOURCE: 'ALEA', COMMENTAIRE: 'Archive en double' }),
     row({ ID_EVENEMENT: 'ALEA-2', SOURCE: 'ALEA', COMMENTAIRE: 'Archive historique' }),
-    row({ ID_EVENEMENT: 'ALEA-1', SOURCE: 'ALEA_MES', COMMENTAIRE: 'Autre source' })
+    row({ ID_EVENEMENT: 'ALEA-1', SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', COMMENTAIRE: 'Autre source' })
   ]).map(item => ({ id: item[0], source: item[3], comment: item[24] }));
 })()`);
 assert.equal(mergedAnalysisFacts.length, 3);
@@ -496,7 +505,7 @@ assert.ok(html.includes('data-view="overview"'));
 assert.ok(html.includes('data-view="dashboard"'));
 assert.ok(!html.includes('data-view="quality"'));
 assert.ok(!html.includes('data-view="combinedAlea"'));
-assert.ok(html.includes('300 € par NC · 100 € par heure d’indisponibilité'));
+assert.ok(html.includes('NC à 250 € en moyenne, selon scénario · MES à 110 €/h d’indisponibilité'));
 assert.ok(html.includes('id="msn"'));
 assert.ok(html.includes('id="reviewSourceSwitch"'));
 assert.ok(html.includes('data-review-source="NC"'));
@@ -540,8 +549,8 @@ assert.equal(sourceQualityAudit.retainedRows, 3);
 assert.equal(sourceQualityAudit.retainedFacts, 3);
 assert.equal(sourceQualityAudit.excludedRows, 2);
 assert.equal(sourceQualityAudit.rates.retainedRows.percentage, 60);
-assert.equal(sourceQualityAudit.immoProvided, 4);
-assert.equal(sourceQualityAudit.immoMissing, 1);
+assert.equal(sourceQualityAudit.immoProvided, 5);
+assert.equal(sourceQualityAudit.immoMissing, 0);
 assert.equal(sourceQualityAudit.immoUnrecognized, 1);
 assert.equal(sourceQualityAudit.rates.dateComplete.percentage, 80);
 assert.equal(sourceQualityAudit.quantityInvalid, 1);
@@ -719,9 +728,9 @@ const mesIdentityQuality = evaluate(`(() => {
     { IMMO: '1700001', FAMILLE: 'FAM-A', SECTION: 'PA', CATEGORIE: 'Perçage' }
   ]);
   return buildMesSourceQualityAudit_([
-    { SOURCE: 'ALEA_MES', DATE: '2026-08-18', IMMO: '', FAMILLE: '', SECTION: 'PA', QUANTITE: 1, COMMENTAIRE_INITIAL: '', METHODE_RAPPROCHEMENT: 'NON_TROUVE' },
-    { SOURCE: 'ALEA_MES', DATE: '2026-08-18', IMMO: '9999999', FAMILLE: '', SECTION: 'PA', QUANTITE: 1, COMMENTAIRE_INITIAL: '', METHODE_RAPPROCHEMENT: 'IMMO_NON_RECONNU' },
-    { SOURCE: 'ALEA_MES', DATE: '2026-08-18', IMMO: '1700001', FAMILLE: '', SECTION: 'PA', QUANTITE: 1, COMMENTAIRE_INITIAL: '', METHODE_RAPPROCHEMENT: 'IMMO_EXACT' }
+    { SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', DATE: '2026-08-18', IMMO: '', IMMO_SOURCE: '', FAMILLE: '', SECTION: 'PA', QUANTITE: 1, COMMENTAIRE_INITIAL: '', METHODE_RAPPROCHEMENT: 'NON_TROUVE' },
+    { SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', DATE: '2026-08-18', IMMO: '9999999', IMMO_SOURCE: '9999999', FAMILLE: '', SECTION: 'PA', QUANTITE: 1, COMMENTAIRE_INITIAL: '', METHODE_RAPPROCHEMENT: 'IMMO_NON_RECONNU' },
+    { SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', DATE: '2026-08-18', IMMO: '1700001', IMMO_SOURCE: '1700001', FAMILLE: '', SECTION: 'PA', QUANTITE: 1, COMMENTAIRE_INITIAL: '', METHODE_RAPPROCHEMENT: 'IMMO_EXACT' }
   ], master, {}).bySource[0];
 })()`);
 assert.equal(mesIdentityQuality.rawRows, 3);
@@ -750,7 +759,7 @@ assert.equal(trendQuality.mes.alerts[0].ratio, 44.6);
 assert.equal(trendQuality.mes.alerts[0].week, '2026-S03');
 const rawTrendQuality = evaluate(`buildTrendQuality_([
   ['2026-S03', 3, 1, 2]
-], { byWeek: [{ label: '2026-S03', quantity: 424 }] })`);
+], { byWeek: [{ label: '2026-S01', quantity: 8 }, { label: '2026-S02', quantity: 10 }, { label: '2026-S03', quantity: 424 }] })`);
 assert.equal(rawTrendQuality.mes.peak.value, 424);
 assert.equal(rawTrendQuality.mes.rawQuantity, true);
 assert.equal(rawTrendQuality.mes.alerts[0].week, '2026-S03');
@@ -760,8 +769,8 @@ const mesPeakDiagnostic = evaluate(`(() => {
   const index = Object.fromEntries(headers.map((header, position) => [header, position]));
   const row = values => headers.map(header => Object.prototype.hasOwnProperty.call(values, header) ? values[header] : '');
   return buildMesPeakDiagnostics_([
-    row({ ID_EVENEMENT: 'ALEA_MES-MES-1', DATE: new Date('2026-01-13'), SOURCE: 'ALEA_MES', IMMO: '1700001', FAMILLE: 'FAM-A', QUANTITE: 424, FICHIER_SOURCE: 'mes.xlsx', RAPPROCHEMENT_MES: 'IMMO_EXACT' }),
-    row({ ID_EVENEMENT: 'ALEA_MES-MES-2', DATE: new Date('2026-01-14'), SOURCE: 'ALEA_MES', IMMO: '1700002', FAMILLE: '', QUANTITE: 2, FICHIER_SOURCE: 'mes.xlsx', RAPPROCHEMENT_MES: 'FAMILLE_COMMENTAIRE' })
+    row({ ID_EVENEMENT: 'ALEA_MES-MES-1', DATE: new Date('2026-01-13'), SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', IMMO: '1700001', FAMILLE: 'FAM-A', QUANTITE: 424, FICHIER_SOURCE: 'mes.xlsx', RAPPROCHEMENT_MES: 'IMMO_EXACT' }),
+    row({ ID_EVENEMENT: 'ALEA_MES-MES-2', DATE: new Date('2026-01-14'), SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', IMMO: '1700002', FAMILLE: '', QUANTITE: 2, FICHIER_SOURCE: 'mes.xlsx', RAPPROCHEMENT_MES: 'FAMILLE_COMMENTAIRE' })
   ], index, [
     { ID_EVENEMENT: 'MES-1', FICHIER_ID: 'file-1', FICHIER_NOM: 'mes.xlsx', IMMO: '1700001', FAMILLE: 'FAM-A', METHODE_RAPPROCHEMENT: 'IMMO_EXACT' },
     { ID_EVENEMENT: 'MES-2', FICHIER_ID: 'file-1', FICHIER_NOM: 'mes.xlsx', IMMO: '1700002', FAMILLE: 'FAM-B', METHODE_RAPPROCHEMENT: 'FAMILLE_COMMENTAIRE' }
@@ -777,7 +786,7 @@ const mesImpactQuantity = evaluate(`(() => {
   const headers = APP.factsHeaders;
   const index = Object.fromEntries(headers.map((header, position) => [header, position]));
   const row = values => headers.map(header => Object.prototype.hasOwnProperty.call(values, header) ? values[header] : '');
-  const mes = row({ SOURCE: 'ALEA_MES', QUANTITE: 424 });
+  const mes = row({ SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', QUANTITE: 424 });
   const production = row({ SOURCE: 'ALEA', QUANTITE: 3 });
   return {
     mesImpact: factQuantity_(mes, index),
@@ -789,11 +798,11 @@ assert.equal(mesImpactQuantity.mesImpact, 1);
 assert.equal(mesImpactQuantity.mesRaw, 424);
 assert.equal(mesImpactQuantity.productionImpact, 3);
 assert.equal(evaluate(`(() => {
-  const exact = { ID_EVENEMENT: 'MES-1', SOURCE: 'ALEA_MES', FICHIER_NOM: 'exact.xlsx' };
-  const prefix = { ID_EVENEMENT: 'MES-10', SOURCE: 'ALEA_MES', FICHIER_NOM: 'prefix.xlsx' };
+  const exact = { ID_EVENEMENT: 'MES-1', SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', FICHIER_NOM: 'exact.xlsx' };
+  const prefix = { ID_EVENEMENT: 'MES-10', SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', FICHIER_NOM: 'prefix.xlsx' };
   return findMesStagingRowForFact_('ALEA_MES-MES-1', [prefix, exact]).FICHIER_NOM;
 })()`), 'exact.xlsx');
-assert.equal(evaluate("findMesStagingRowForFact_('ALEA_MES-MES-1-abcdef12', [{ ID_EVENEMENT: 'MES-10', SOURCE: 'ALEA_MES', FICHIER_NOM: 'wrong.xlsx' }]).FICHIER_NOM"), undefined);
+assert.equal(evaluate("findMesStagingRowForFact_('ALEA_MES-MES-1-abcdef12', [{ ID_EVENEMENT: 'MES-10', SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', FICHIER_NOM: 'wrong.xlsx' }]).FICHIER_NOM"), undefined);
 
 assert.equal(evaluate("parseDurationHours_('0-01:30:00')"), 1.5);
 assert.equal(evaluate("parseDurationHours_('00:30:00')"), 0.5);
@@ -840,16 +849,16 @@ assert.equal(mesFamilyStaging[15], 'FAMILLE_COMMENTAIRE');
 assert.equal(mesFamilyStaging[22], '');
 
 const mesEvidenceQuality = evaluate(`buildMesEvidenceQuality_([
-  { SOURCE: 'ALEA_MES', DATE: '2026-08-18', IMMO: '', FAMILLE: 'FAM-A', MSN: '700', METHODE_RAPPROCHEMENT: 'FAMILLE_COMMENTAIRE', IMMO_SOURCE: '', FAMILLE_SOURCE: '' },
-  { SOURCE: 'ALEA_MES', DATE: '2026-08-18', IMMO: '1710288', FAMILLE: 'FAM-A', MSN: '701', METHODE_RAPPROCHEMENT: 'IMMO_COMMENTAIRE', IMMO_SOURCE: '', FAMILLE_SOURCE: '' },
-  { SOURCE: 'ALEA_MES', DATE: '2026-08-18', IMMO: '', FAMILLE: '', MSN: '702', METHODE_RAPPROCHEMENT: 'NON_TROUVE', IMMO_SOURCE: '', FAMILLE_SOURCE: '' }
+  { SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', DATE: '2026-08-18', IMMO: '', FAMILLE: 'FAM-A', MSN: '700', METHODE_RAPPROCHEMENT: 'FAMILLE_COMMENTAIRE', IMMO_SOURCE: '', FAMILLE_SOURCE: '' },
+  { SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', DATE: '2026-08-18', IMMO: '1710288', FAMILLE: 'FAM-A', MSN: '701', METHODE_RAPPROCHEMENT: 'IMMO_COMMENTAIRE_EXACT', IMMO_SOURCE: '', FAMILLE_SOURCE: '' },
+  { SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', DATE: '2026-08-18', IMMO: '', FAMILLE: '', MSN: '702', METHODE_RAPPROCHEMENT: 'NON_TROUVE', IMMO_SOURCE: '', FAMILLE_SOURCE: '' }
 ], {})`);
 assert.deepEqual({ ...mesEvidenceQuality }, {
   events: 3, immoCited: 1, immoMissing: 2, familyCited: 1, msnCited: 3,
   immoCoverage: 33.3, familyCoverage: 33.3, msnCoverage: 100
 });
 assert.equal(evaluate(`buildMesEvidenceQuality_([
-  { SOURCE: 'ALEA_MES', DATE: '2026-08-18', MSN: '700', METHODE_RAPPROCHEMENT: 'IMMO_COMMENTAIRE' }
+  { SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', DATE: '2026-08-18', MSN: '700', METHODE_RAPPROCHEMENT: 'IMMO_COMMENTAIRE' }
 ], { source: 'NC' }).events`), 0);
 assert.equal(evaluate('APP.parameterDefaults.ID_FICHIER_PLANNING_MSN'), '1UFoE2rUJmJy_KM77JRUAAl_ffhgz9rh7JJt3wcUVf_Y');
 
@@ -883,13 +892,13 @@ const businessDeduplication = evaluate(`(() => {
     row({ ID_EVENEMENT: 'NC-PA-1', SOURCE: 'NC', NC_NUMERO: '2161', IMMO: '1710288', FAMILLE: 'FAM-NC-PA', POSTE: 'P280', COMMENTAIRE: 'Source NC PA', FICHIER_SOURCE: 'Données NC PA' }),
     row({ ID_EVENEMENT: 'NC-MES-1', SOURCE: 'NC', NC_NUMERO: '2161', DATE: '2026-08-18', RAPPROCHEMENT_MES: 'NC_MES_NUMERO', COMMENTAIRE: 'Source MES', FICHIER_SOURCE: 'mes.xlsx' }),
     row({ ID_EVENEMENT: 'ALEA-1', SOURCE: 'ALEA', DATE: '2026-08-18', IMMO: '1710288', COMMENTAIRE: 'Incident commun' }),
-    row({ ID_EVENEMENT: 'MES-1', SOURCE: 'ALEA_MES', DATE: '2026-08-18', IMMO: '1710288', COMMENTAIRE: 'Incident commun' })
+    row({ ID_EVENEMENT: 'MES-1', SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', DATE: '2026-08-18', IMMO: '1710288', COMMENTAIRE: 'Incident commun' })
   ]);
   return rows.map(item => ({ id: item[0], source: item[3], nc: item[25], immo: item[4], family: item[5], station: item[10], files: item[19] }));
 })()`);
 assert.equal(businessDeduplication.length, 3);
 const mergedNc = businessDeduplication.find(item => item.nc === '2161');
-assert.equal(mergedNc.files, 'mes.xlsx + Données NC PA');
+assert.equal(mergedNc.files, 'Données NC PA + mes.xlsx');
 assert.equal(mergedNc.immo, '1710288');
 assert.equal(mergedNc.family, 'FAM-NC-PA');
 assert.equal(mergedNc.station, 'P280');
@@ -938,12 +947,14 @@ assert.equal(evaluate("sourceAnalysisOrigin_('ALEA').sourceSheet"), 'Remontées 
 
 const legacyNcEnrichment = evaluate(`(() => {
   const target = [];
+  // readRecords_ normalise les en-têtes avant appendFacts_ : on reproduit ce format.
+  const normalizedRecord = record => Object.fromEntries(Object.entries(record).map(([key, value]) => [normalizeHeader_(key), value]));
   appendFacts_(target, [
-    {
+    normalizedRecord({
       'Date NC': '2026-08-18', 'N° Immo': '1799999', Machine: 'P290 C', EAP: 'PA',
       'Indication Famille': 'FAM-ANCIENNE', NC: '2161', 'Nbr NC': 1, 'Qté': 1620,
       'Typologie défaut': 'Défaut source', Commentaire: 'R1', 'Commentaires Qualité': 'upa revenant de maintenance avec 1620 unites'
-    }
+    })
   ], 'NC', APP.aliases.nc, buildMasterIndex_([
     { IMMO: '1799999', SECTION: 'PA', CATEGORIE: 'Perçage' }
   ]), { POIDS_NC: '5' }, 'Données NC PA');
@@ -955,7 +966,7 @@ assert.equal(legacyNcEnrichment[10], 'P290 C');
 assert.equal(legacyNcEnrichment[13], 1620);
 assert.equal(legacyNcEnrichment[24], 'R1');
 assert.equal(legacyNcEnrichment[28], 'upa revenant de maintenance avec 1620 unites');
-assert.equal(legacyNcEnrichment[18], false);
+assert.equal(legacyNcEnrichment[18], true);
 
 const preservedNcWorkflow = evaluate(`mergeMesPreNcWorkflowFields_(
   { ID_EVENEMENT: 'MES-1', NC_NUMERO: '216649357', IMMO: '', FAMILLE: 'FAM-MES' },
@@ -997,8 +1008,8 @@ assert.equal(qlikMesExport.length, 1);
 assert.equal(qlikMesExport[0][6], 'P280 A');
 assert.equal(qlikMesExport[0][16], 'ALEA_MES');
 assert.equal(qlikMesExport[0][13], 0.5);
-assert.equal(evaluate("hasAuthoritativeManualNc_([{ SOURCE: 'ALEA_MES' }, { SOURCE: 'NC' }])"), true);
-assert.equal(evaluate("hasAuthoritativeManualNc_([{ SOURCE: 'ALEA_MES' }])"), false);
+assert.equal(evaluate("hasAuthoritativeManualNc_([{ SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens' }, { SOURCE: 'NC' }])"), true);
+assert.equal(evaluate("hasAuthoritativeManualNc_([{ SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens' }])"), false);
 
 const consolidatedMesSources = evaluate(`(() => {
   const target = [];
@@ -1058,7 +1069,7 @@ const mesFamilyWithoutImmo = evaluate(`(() => {
   appendStagedMesFacts_(target, [{
     ID_EVENEMENT: 'MES-FAMILY', DATE: '2026-08-18', IMMO: '', FAMILLE: '401-M2-008-A-P2-3.2',
     TYPE_MACHINE: '0328 UPA MEDU', SECTION: 'Structure PA A350', POSTE: 'P290',
-    QUANTITE: 1, TEMPS_PERDU_HEURES: 1, COMMENTAIRE_INITIAL: '', SOURCE: 'ALEA_MES'
+    QUANTITE: 1, TEMPS_PERDU_HEURES: 1, COMMENTAIRE_INITIAL: '', SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens'
   }], master, { POIDS_ALEA_MES: '1', COUT_HEURE_PERDUE_EUR: '100' });
   return target.map(row => ({ immo: row[4], family: row[5], cost: row[15], method: row[22] }));
 })()`);
@@ -1198,13 +1209,13 @@ const combinedAleaAnalysis = evaluate(`(() => {
   const row = values => headers.map(header => Object.prototype.hasOwnProperty.call(values, header) ? values[header] : '');
   return buildCombinedAleaAnalysis_([
     row({ ID_EVENEMENT: 'prod-strong', DATE: new Date('2026-08-18'), SOURCE: 'ALEA', IMMO: '1607001', POSTE: 'P290', PROBLEME: 'Casse outil', COMMENTAIRE: 'Foret casse', TEMPS_PERDU_HEURES: 1 }),
-    row({ ID_EVENEMENT: 'mes-strong', DATE: new Date('2026-08-18'), SOURCE: 'ALEA_MES', IMMO: '1607001', POSTE: 'P290 A', PROBLEME: 'Manquant', COMMENTAIRE: 'Outil casse', TEMPS_PERDU_HEURES: 0.5 }),
+    row({ ID_EVENEMENT: 'mes-strong', DATE: new Date('2026-08-18'), SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', IMMO: '1607001', POSTE: 'P290 A', PROBLEME: 'Manquant', COMMENTAIRE: 'Outil casse', TEMPS_PERDU_HEURES: 0.5 }),
     row({ ID_EVENEMENT: 'prod-probable', DATE: new Date('2026-08-21'), SOURCE: 'ALEA', IMMO: '1607002', POSTE: 'P280', PROBLEME: 'Défaut mécanique', TEMPS_PERDU_HEURES: 0.25 }),
-    row({ ID_EVENEMENT: 'mes-probable', DATE: new Date('2026-08-22'), SOURCE: 'ALEA_MES', IMMO: '1607002', POSTE: 'P280 A', PROBLEME: 'Autre incident', TEMPS_PERDU_HEURES: 0.75 }),
+    row({ ID_EVENEMENT: 'mes-probable', DATE: new Date('2026-08-22'), SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', IMMO: '1607002', POSTE: 'P280 A', PROBLEME: 'Autre incident', TEMPS_PERDU_HEURES: 0.75 }),
     row({ ID_EVENEMENT: 'prod-unmatched', DATE: new Date('2026-08-30'), SOURCE: 'ALEA', IMMO: '1607003', POSTE: 'P280', PROBLEME: 'Affichage HS' }),
-    row({ ID_EVENEMENT: 'mes-unmatched', DATE: new Date('2026-08-30'), SOURCE: 'ALEA_MES', IMMO: '1607004', POSTE: 'P290', PROBLEME: 'Autre incident' }),
-    row({ ID_EVENEMENT: 'mes-grid', DATE: new Date('2026-08-30'), SOURCE: 'ALEA_MES', IMMO: '1607005', POSTE: 'P290', COMMENTAIRE: 'Grille de percage' }),
-    row({ ID_EVENEMENT: 'mes-box-edu', DATE: new Date('2026-08-30'), SOURCE: 'ALEA_MES', IMMO: '1607006', POSTE: 'P290', COMMENTAIRE: 'Incident Box EDU' })
+    row({ ID_EVENEMENT: 'mes-unmatched', DATE: new Date('2026-08-30'), SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', IMMO: '1607004', POSTE: 'P290', PROBLEME: 'Autre incident' }),
+    row({ ID_EVENEMENT: 'mes-grid', DATE: new Date('2026-08-30'), SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', IMMO: '1607005', POSTE: 'P290', COMMENTAIRE: 'Grille de percage' }),
+    row({ ID_EVENEMENT: 'mes-box-edu', DATE: new Date('2026-08-30'), SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', IMMO: '1607006', POSTE: 'P290', COMMENTAIRE: 'Incident Box EDU' })
   ], index, { source: 'ALEA' });
 })()`);
 assert.equal(combinedAleaAnalysis.kpis.productionEvents, 3);
@@ -1237,12 +1248,12 @@ const combinedCommentMatch = evaluate(`(() => {
   const row = values => headers.map(header => Object.prototype.hasOwnProperty.call(values, header) ? values[header] : '');
   return buildCombinedAleaAnalysis_([
     row({ ID_EVENEMENT: 'prod-comment', DATE: new Date('2026-08-18'), SOURCE: 'ALEA', IMMO: '1607026', POSTE: 'P290' }),
-    row({ ID_EVENEMENT: 'mes-comment', DATE: new Date('2026-08-18'), SOURCE: 'ALEA_MES', COMMENTAIRE: 'Aléa famille SNZ M2 224' })
+    row({ ID_EVENEMENT: 'mes-comment', DATE: new Date('2026-08-18'), SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', COMMENTAIRE: 'Aléa famille SNZ M2 224' })
   ], index, {}, master);
 })()`);
 assert.equal(combinedCommentMatch.kpis.matchedEvents, 1);
 assert.equal(combinedCommentMatch.rows[0].immo, '1607026');
-assert.ok(combinedCommentMatch.rows[0].correspondence.reasons.includes('IMMO retrouvé via famille MES : 1607026'));
+assert.ok(combinedCommentMatch.rows[0].correspondence.reasons.includes('famille machine identique'));
 
 const sourceConsolidation = evaluate(`(() => {
   const master = buildMasterIndex_([
@@ -1332,7 +1343,7 @@ assert.equal(ncSourceAnalysis.msns[0].total, 8);
 
 const legacyFactsSchema = evaluate(`factsSchemaStatus_(APP.factsHeaders.slice(0, -1))`);
 assert.equal(legacyFactsSchema.needsRefresh, true);
-assert.deepEqual([...legacyFactsSchema.missing], ['MSN']);
+assert.deepEqual([...legacyFactsSchema.missing], [evaluate('APP.factsHeaders[APP.factsHeaders.length - 1]')]);
 assert.equal(evaluate(`factsSchemaStatus_(APP.factsHeaders).needsRefresh`), false);
 evaluate(`preserveFactsRebuildFlag_({ needsRefresh: true })`);
 assert.equal(scriptProperties.FACTS_SCHEMA_REBUILD_REQUIRED, 'OUI');

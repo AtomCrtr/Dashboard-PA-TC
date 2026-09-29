@@ -1192,7 +1192,7 @@ function combinedAleaDetailRow_(row, index, source, master) {
     station: clean_(row[index.POSTE]),
     immo: immo || immos.join(' / '),
     immos,
-    family: family || commentIdentity.family,
+    family: family || commentIdentity.family || (master && immos.length === 1 ? clean_((master.byImmo[immos[0]] || {}).family) : ''),
     problem,
     category: clean_(row[index.CATEGORIE]),
     comment,
@@ -1851,7 +1851,11 @@ function appendStagedMesFacts_(target, rows, master, parameters) {
     if (isLegacyQlik && normalizeHeader_(row.TYPE_MACHINE) !== 'UPAMEDU') return;
     if (isLegacyQlik && !normalizeHeader_(row.SECTION).startsWith('PAA350STR')) return;
     const identity = resolveMesIdentity_(row.IMMO || row.IMMO_SOURCE, row.FAMILLE, row.COMMENTAIRE_INITIAL, master);
-    const immos = isMesIdentityImmoMethod_(identity.method) && identity.immos.length ? identity.immos : [''];
+    // Un IMMO saisi puis validé par la Qualité reste attribué même s'il manque au master.
+    const validatedImmo = source === 'NC' ? normalizeImmo_(clean_(row.IMMO_SAISI)) : '';
+    const immos = isMesIdentityImmoMethod_(identity.method) && identity.immos.length
+      ? identity.immos
+      : isPlausibleImmo_(validatedImmo) ? [validatedImmo] : [''];
     immos.forEach(immo => {
       const indexedMasterData = master.byImmo[immo] || {};
       const masterData = indexedMasterData.immo && isInScope_(indexedMasterData.section)
@@ -2692,9 +2696,12 @@ function isMesIdentityImmoMethod_(method) {
 }
 
 function resolveCommentFamily_(tokens, master) {
-  const familyTokens = commentFamilyTokens_(tokens);
-  const familyKeys = [...new Set(familyTokens.flatMap(token => master.familyIdentityOwners && master.familyIdentityOwners[token] || []))];
-  if (!familyKeys.length) return null;
+  const owners = master.familyIdentityOwners || {};
+  const matchedTokens = commentFamilyTokens_(tokens).filter(token => owners[token] && owners[token].length);
+  if (!matchedTokens.length) return null;
+  // Le jeton le plus long est le plus spécifique : « 208V3021 » l'emporte sur « V3021 », partagé par plusieurs familles.
+  const longest = Math.max(...matchedTokens.map(token => token.length));
+  const familyKeys = [...new Set(matchedTokens.filter(token => token.length === longest).flatMap(token => owners[token]))];
   const families = familyKeys.map(key => master.byFamilyKey[key]).filter(Boolean);
   if (!families.length) return null;
   const uniqueFamilies = [...new Map(families.map(data => [identityKey_(data.family), data])).values()];
