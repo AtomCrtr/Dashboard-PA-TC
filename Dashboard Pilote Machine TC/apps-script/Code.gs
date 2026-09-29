@@ -3198,7 +3198,10 @@ function withReviewActionPlanCoverage_(data) {
       complete: coverage.complete,
       sourcesRead: coverage.sourcesRead,
       sourceCount: coverage.sourceCount,
-      errors: coverage.errors
+      errors: coverage.errors,
+      summary: coverage.summary || null,
+      recentMonths: coverage.recentMonths || ACTION_PLAN_RECENT_MONTHS,
+      referenceDate: coverage.referenceDate || ''
     },
     actionPlanCostQuality,
     costs: Object.assign({}, costs, {
@@ -3244,7 +3247,7 @@ function readActionPlanCoverage_() {
   if (!sources.length) return unavailable;
 
   const cache = typeof CacheService !== 'undefined' ? CacheService.getScriptCache() : null;
-  const cacheKey = `tc-action-coverage-${digest_(sources.map(source => source.id).join('|'))}`;
+  const cacheKey = `tc-action-coverage-v2-${digest_(sources.map(source => source.id).join('|'))}`;
   const cached = cache ? readJsonCache_(cache, cacheKey, 'suivi des plans TC') : null;
   if (cached) return cached;
 
@@ -3279,26 +3282,24 @@ function readActionPlanCoverage_() {
 }
 
 function readTcActionPlanActions_(spreadsheet, master) {
-  const latest = findLatestTcActionPlanSheet_(spreadsheet);
-  if (latest) {
-    return parseLegacyMftActions_(latest, master).map(item => ({
-      immo: item.immo,
-      family: item.famille,
-      action: item.decision,
-      status: item.statut
-    })).filter(item => item.action && (item.immo || item.family));
-  }
+  const snapshots = listTcActionPlanSheets_(spreadsheet);
+  if (snapshots.length) return readActionPlanSnapshots_(snapshots, master);
   const official = spreadsheet.getSheetByName(APP.sheets.mftOfficialActions);
   if (!official || official.getLastRow() < 2) return [];
   return readSheetObjects_(official).map(item => ({
     immo: clean_(item.IMMO),
     family: clean_(item.FAMILLE),
     action: clean_(item.ACTION_DECIDEE),
-    status: normalizeMftStatus_(item.STATUT)
+    status: normalizeMftStatus_(item.STATUT),
+    closedAt: actionPlanIsoDate_(item.DATE_CLOTURE || (normalizeMftStatus_(item.STATUT) === 'Fait' ? item.DATE_DERNIERE_MAJ : ''))
   })).filter(item => item.action && (item.immo || item.family));
 }
 
 function findLatestTcActionPlanSheet_(spreadsheet) {
+  return listTcActionPlanSheets_(spreadsheet)[0] || null;
+}
+
+function listTcActionPlanSheets_(spreadsheet) {
   const datePattern = /(\d{2})[ _./-]?(\d{2})[ _./-]?(\d{4})/;
   const candidates = spreadsheet.getSheets().map(sheet => {
     const name = sheet.getName();
@@ -3311,27 +3312,181 @@ function findLatestTcActionPlanSheet_(spreadsheet) {
     return { sheet, name, meetingDate };
   }).filter(Boolean);
   candidates.sort((left, right) => right.meetingDate.getTime() - left.meetingDate.getTime());
-  return candidates[0] || null;
+  return candidates;
 }
 
-function actionPlanCoverageFromActions_(actions) {
-  const coverage = { immos: {}, families: {}, unknownImmos: {}, unknownFamilies: {} };
+// Légende de l'item 2 (revue Pilotage) :
+// - noir  : au moins une action ouverte / en cours sur l'IMMO ou la famille ;
+// - bleu  : aucune action ouverte, mais une action terminée dans les 6 derniers mois ;
+// - rouge : aucune action (non prise en compte), action reportée/abandonnée ou clôturée depuis plus de 6 mois ;
+// - gris  : plan illisible ou incomplet, statut inconnu.
+const ACTION_PLAN_RECENT_MONTHS = 6;
+const ACTION_PLAN_TONE_RANK = Object.freeze({ EN_COURS: 3, TERMINEE_RECENTE: 2, NON_TRAITEE: 1 });
+
+function actionPlanCoverageFromActions_(actions, referenceDate) {
+  const coverage = {
+    immos: {}, families: {}, unknownImmos: {}, unknownFamilies: {},
+    summary: { actions: 0, EN_COURS: 0, TERMINEE_RECENTE: 0, NON_TRAITEE: 0, INCONNU: 0 },
+    recentMonths: ACTION_PLAN_RECENT_MONTHS,
+    referenceDate: toIsoDate_(referenceDate || new Date())
+  };
+  const recentLimit = actionPlanRecentLimit_(referenceDate);
+  const keep = (target, key, tone) => {
+    if (!target[key] || ACTION_PLAN_TONE_RANK[tone] > ACTION_PLAN_TONE_RANK[target[key]]) target[key] = tone;
+  };
   (actions || []).forEach(action => {
-    const status = actionPlanStatusFromValue_(action.status);
-    const immoTarget = status === 'ACTIVE' ? coverage.immos : status === 'UNKNOWN' ? coverage.unknownImmos : null;
-    const familyTarget = status === 'ACTIVE' ? coverage.families : status === 'UNKNOWN' ? coverage.unknownFamilies : null;
-    if (!immoTarget && !familyTarget) return;
-    actionPlanCoverageTokens_(action.immo, /[;,/|\n]+/).forEach(key => { immoTarget[key] = true; });
-    actionPlanCoverageTokens_(action.family, /[;|\n]+/).forEach(key => { familyTarget[key] = true; });
+    const tone = actionPlanToneForAction_(action, recentLimit);
+    coverage.summary.actions += 1;
+    coverage.summary[tone] += 1;
+    const immoTarget = tone === 'INCONNU' ? coverage.unknownImmos : coverage.immos;
+    const familyTarget = tone === 'INCONNU' ? coverage.unknownFamilies : coverage.families;
+    actionPlanCoverageTokens_(action.immo, /[;,/|\n]+/).forEach(key => {
+      if (tone === 'INCONNU') immoTarget[key] = true; else keep(immoTarget, key, tone);
+    });
+    actionPlanCoverageTokens_(action.family, /[;|\n]+/).forEach(key => {
+      if (tone === 'INCONNU') familyTarget[key] = true; else keep(familyTarget, key, tone);
+    });
   });
   return coverage;
 }
 
+function actionPlanRecentLimit_(referenceDate) {
+  const reference = referenceDate instanceof Date && !Number.isNaN(referenceDate.getTime()) ? referenceDate : new Date();
+  return new Date(reference.getFullYear(), reference.getMonth() - ACTION_PLAN_RECENT_MONTHS, reference.getDate());
+}
+
+function actionPlanToneForAction_(action, recentLimit) {
+  const status = actionPlanStatusFromValue_(action.status);
+  if (status === 'OPEN') return 'EN_COURS';
+  if (status === 'DONE') {
+    const closedAt = parseDate_(action.closedAt);
+    return closedAt && closedAt >= recentLimit ? 'TERMINEE_RECENTE' : 'NON_TRAITEE';
+  }
+  if (status === 'DROPPED') return 'NON_TRAITEE';
+  return 'INCONNU';
+}
+
 function actionPlanStatusFromValue_(value) {
   const status = normalizeHeader_(value);
-  if (['ENCOURS', 'ENRETARD'].includes(status)) return 'ACTIVE';
-  if (['FAIT', 'DONE', 'CLOTURE', 'CLOTUREE', 'REPORTE', 'REPORTEE', 'DEFERRED', 'ABANDONNE', 'ABANDONNEE', 'ANNULE', 'ANNULEE', 'REJETE', 'REJETEE', 'SUPPRIME', 'SUPPRIMEE'].includes(status)) return 'INACTIVE';
+  if (['ENCOURS', 'ENRETARD', 'OPEN', 'DUE', 'OUVERT', 'OUVERTE', 'NOUVEAU', 'NOUVELLE', 'AFAIRE'].includes(status)) return 'OPEN';
+  if (['FAIT', 'DONE', 'CLOTURE', 'CLOTUREE', 'TERMINE', 'TERMINEE', 'SOLDE', 'SOLDEE'].includes(status)) return 'DONE';
+  if (['REPORTE', 'REPORTEE', 'DEFERRED', 'ABANDONNE', 'ABANDONNEE', 'ANNULE', 'ANNULEE', 'REJETE', 'REJETEE', 'SUPPRIME', 'SUPPRIMEE'].includes(status)) return 'DROPPED';
   return 'UNKNOWN';
+}
+
+// Lit les onglets datés utiles (6 derniers mois + l'onglet de référence précédent) et
+// reconstitue l'historique de chaque action pour dater sa clôture.
+function readActionPlanSnapshots_(snapshots, master, referenceDate) {
+  const selected = selectActionPlanSnapshots_(snapshots, referenceDate);
+  const parsed = selected.map(snapshot => ({
+    meetingDate: snapshot.meetingDate,
+    rows: readActionPlanSnapshotRows_(snapshot.sheet)
+  }));
+  return buildActionPlanTimeline_(parsed).map(action => {
+    const identity = resolveLegacyMftIdentity_(action.issue, master);
+    return {
+      ref: action.ref,
+      immo: identity.immo,
+      family: identity.famille,
+      action: action.decision,
+      status: action.status,
+      closedAt: action.closedAt ? toIsoDate_(action.closedAt) : ''
+    };
+  }).filter(item => item.action && (item.immo || item.family));
+}
+
+function selectActionPlanSnapshots_(snapshots, referenceDate) {
+  const ordered = (snapshots || []).filter(snapshot => snapshot && snapshot.meetingDate)
+    .slice().sort((left, right) => left.meetingDate.getTime() - right.meetingDate.getTime());
+  const recentLimit = actionPlanRecentLimit_(referenceDate);
+  const firstRecent = ordered.findIndex(snapshot => snapshot.meetingDate >= recentLimit);
+  if (firstRecent < 0) return ordered.slice(-1);
+  // L'onglet juste avant la fenêtre suffit à savoir si une action était déjà close avant.
+  return ordered.slice(Math.max(0, firstRecent - 1));
+}
+
+function readActionPlanSnapshotRows_(sheet) {
+  const values = sheet.getDataRange().getValues();
+  const headerRow = findMftHeaderRow_(values);
+  if (headerRow < 0) return [];
+  const columns = mapMftColumns_(values[headerRow]);
+  return actionPlanRowsFromValues_(values.slice(headerRow + 1), columns);
+}
+
+function actionPlanRowsFromValues_(rows, columns) {
+  const cell = (row, column) => column >= 0 ? row[column] : '';
+  return (rows || []).map(row => ({
+    ref: clean_(cell(row, columns.ref)).replace(/\.0+$/, ''),
+    issue: clean_(cell(row, columns.issue)),
+    decision: clean_(cell(row, columns.action)),
+    status: normalizeMftStatus_(cell(row, columns.status)),
+    due: cell(row, columns.due),
+    comment: clean_(cell(row, columns.comment))
+  })).filter(row => row.ref || row.issue || row.decision);
+}
+
+// snapshots : [{ meetingDate, rows: [{ ref, issue, decision, status, due, comment }] }].
+// La date de clôture est celle de la première réunion où l'action passe à « Fait ».
+// Une action déjà « Fait » dans le premier onglet lu est datée par son commentaire,
+// puis par son échéance, sans dépasser cette réunion.
+function buildActionPlanTimeline_(snapshots) {
+  const ordered = (snapshots || []).filter(snapshot => snapshot && snapshot.meetingDate)
+    .slice().sort((left, right) => left.meetingDate.getTime() - right.meetingDate.getTime());
+  const entries = new Map();
+  ordered.forEach((snapshot, position) => {
+    (snapshot.rows || []).forEach(row => {
+      const key = row.ref ? `REF-${normalizeHeader_(row.ref)}` : `TXT-${normalizeHeader_(`${row.issue}|${row.decision}`)}`;
+      const entry = entries.get(key) || { firstSeen: position, seenOpen: false, doneSince: null, doneRow: null, lastSeen: position, row };
+      if (row.status === 'Fait') {
+        if (!entry.doneSince) {
+          entry.doneSince = snapshot.meetingDate;
+          entry.doneRow = row;
+        }
+      } else {
+        entry.doneSince = null;
+        entry.doneRow = null;
+        if (row.status === 'En cours') entry.seenOpen = true;
+      }
+      entry.row = row;
+      entry.lastSeen = position;
+      entries.set(key, entry);
+    });
+  });
+  const lastPosition = ordered.length - 1;
+  return [...entries.values()].map(entry => {
+    let status = entry.row.status;
+    let closedAt = null;
+    if (entry.lastSeen < lastPosition && status === 'En cours') {
+      // Action ouverte retirée du plan : considérée close à la réunion suivante.
+      status = 'Fait';
+      closedAt = ordered[entry.lastSeen + 1].meetingDate;
+    } else if (status === 'Fait') {
+      closedAt = entry.seenOpen || entry.firstSeen > 0
+        ? entry.doneSince
+        : estimateActionPlanClosure_(entry.doneRow || entry.row, entry.doneSince);
+    }
+    return Object.assign({}, entry.row, { status, closedAt });
+  });
+}
+
+function estimateActionPlanClosure_(row, upperBound) {
+  const limit = upperBound ? upperBound.getTime() : Infinity;
+  const commentDates = [...clean_(row.comment).matchAll(/(\d{1,2})\/(\d{1,2})\/(\d{4}|\d{2})(?!\d)/g)]
+    .map(match => {
+      const year = match[3].length === 2 ? 2000 + Number(match[3]) : Number(match[3]);
+      const date = new Date(year, Number(match[2]) - 1, Number(match[1]));
+      return date.getMonth() === Number(match[2]) - 1 ? date : null;
+    })
+    .filter(date => date && date.getTime() <= limit);
+  if (commentDates.length) return new Date(Math.max(...commentDates.map(date => date.getTime())));
+  const due = row.due instanceof Date ? row.due : null;
+  if (due && !Number.isNaN(due.getTime()) && due.getTime() <= limit) return due;
+  return null;
+}
+
+function actionPlanIsoDate_(value) {
+  const date = parseDate_(value);
+  return date ? toIsoDate_(date) : '';
 }
 
 function actionPlanCoverageTokens_(value, separator) {
@@ -3344,9 +3499,10 @@ function actionPlanStatusForKey_(label, dimension, coverage) {
   const identities = (dimension === 'immo' ? coverage.immos : coverage.families) || {};
   const unknownIdentities = (dimension === 'immo' ? coverage.unknownImmos : coverage.unknownFamilies) || {};
   const key = normalizeHeader_(clean_(label).replace(/\.0+$/, ''));
-  if (identities[key]) return 'OUI';
+  if (identities[key] === 'EN_COURS' || identities[key] === 'TERMINEE_RECENTE') return identities[key];
   if (unknownIdentities[key]) return 'INCONNU';
-  return coverage.complete ? 'NON' : 'INCONNU';
+  if (identities[key] === 'NON_TRAITEE') return 'NON_TRAITEE';
+  return coverage.complete ? 'NON_TRAITEE' : 'INCONNU';
 }
 
 function buildActionPlanCostQuality_(rows, coverage, hasCompleteTotals) {
@@ -3359,6 +3515,8 @@ function buildActionPlanCostQuality_(rows, coverage, hasCompleteTotals) {
     totalCost: 0,
     classifiedCost: 0,
     treatedCost: 0,
+    inProgressCost: 0,
+    recentlyClosedCost: 0,
     untreatedCost: 0,
     unknownCost: 0,
     untreatedPercentage: null,
@@ -3372,10 +3530,12 @@ function buildActionPlanCostQuality_(rows, coverage, hasCompleteTotals) {
     if (cost <= 0) return;
     quality.totalCost += cost;
     const status = actionPlanStatusForKey_(row.label, 'family', coverage);
-    if (status === 'OUI') quality.treatedCost += cost;
-    else if (status === 'NON') quality.untreatedCost += cost;
+    if (status === 'EN_COURS') quality.inProgressCost += cost;
+    else if (status === 'TERMINEE_RECENTE') quality.recentlyClosedCost += cost;
+    else if (status === 'NON_TRAITEE') quality.untreatedCost += cost;
     else quality.unknownCost += cost;
   });
+  quality.treatedCost = quality.inProgressCost + quality.recentlyClosedCost;
   quality.classifiedCost = quality.treatedCost + quality.untreatedCost;
   quality.untreatedPercentage = quality.classifiedCost
     ? quality.untreatedCost * 100 / quality.classifiedCost

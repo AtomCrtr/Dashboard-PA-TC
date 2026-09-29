@@ -79,8 +79,77 @@ const actionPlanCoverage = evaluate(`(() => {
   ], coverage, true);
   return { statuses: rows.map(row => row.actionPlanStatus), costQuality };
 })()`);
-assert.deepEqual([...actionPlanCoverage.statuses], ['OUI', 'NON', 'INCONNU']);
+assert.deepEqual([...actionPlanCoverage.statuses], ['EN_COURS', 'NON_TRAITEE', 'INCONNU']);
 assert.equal(actionPlanCoverage.costQuality.untreatedPercentage, 80);
+
+// Légende item 2 : noir = en cours, bleu = terminée < 6 mois, rouge = non prise en compte ou close > 6 mois.
+const actionPlanTones = evaluate(`(() => {
+  const reference = new Date(2026, 8, 29);
+  const actions = [
+    { immo: '1700001', family: 'FAM-OPEN', action: 'Réparer', status: 'Due' },
+    { immo: '1700002', family: 'FAM-RECENT', action: 'Remplacer', status: 'Fait', closedAt: '2026-06-11' },
+    { immo: '1700003', family: 'FAM-OLD', action: 'Former', status: 'Fait', closedAt: '2025-11-20' },
+    { immo: '1700004', family: 'FAM-DEFERRED', action: 'Budget', status: 'Reporté' },
+    { immo: '1700005', family: 'FAM-UNDATED', action: 'Clôture sans date', status: 'Fait', closedAt: '' },
+    { immo: '1700002', family: 'FAM-RECENT', action: 'Ancienne action', status: 'Fait', closedAt: '2024-01-10' },
+    { immo: '1700006', family: 'FAM-OPEN', action: 'Suivi', status: 'Fait', closedAt: '2026-09-03' }
+  ];
+  const coverage = Object.assign(actionPlanCoverageFromActions_(actions, reference), { available: true, complete: true });
+  const labels = ['1700001', '1700002', '1700003', '1700004', '1700005', '1700006', '1799999'];
+  const costQuality = buildActionPlanCostQuality_([
+    { label: 'FAM-OPEN', cost: 100 }, { label: 'FAM-RECENT', cost: 300 }, { label: 'FAM-OLD', cost: 600 }
+  ], coverage, true);
+  const incomplete = Object.assign({}, coverage, { complete: false });
+  return {
+    immos: labels.map(label => actionPlanStatusForKey_(label, 'immo', coverage)),
+    families: ['FAM-OPEN', 'FAM-RECENT', 'FAM-OLD', 'FAM-DEFERRED', 'FAM-ABSENTE'].map(label => actionPlanStatusForKey_(label, 'family', coverage)),
+    missingWhenIncomplete: actionPlanStatusForKey_('1799999', 'immo', incomplete),
+    summary: coverage.summary,
+    costQuality
+  };
+})()`);
+assert.deepEqual(actionPlanTones.immos, ['EN_COURS', 'TERMINEE_RECENTE', 'NON_TRAITEE', 'NON_TRAITEE', 'NON_TRAITEE', 'TERMINEE_RECENTE', 'NON_TRAITEE']);
+assert.deepEqual(actionPlanTones.families, ['EN_COURS', 'TERMINEE_RECENTE', 'NON_TRAITEE', 'NON_TRAITEE', 'NON_TRAITEE']);
+assert.equal(actionPlanTones.missingWhenIncomplete, 'INCONNU');
+assert.deepEqual(actionPlanTones.summary, { actions: 7, EN_COURS: 1, TERMINEE_RECENTE: 2, NON_TRAITEE: 4, INCONNU: 0 });
+assert.equal(actionPlanTones.costQuality.inProgressCost, 100);
+assert.equal(actionPlanTones.costQuality.recentlyClosedCost, 300);
+assert.equal(actionPlanTones.costQuality.untreatedCost, 600);
+assert.equal(actionPlanTones.costQuality.untreatedPercentage, 60);
+
+// Historique des onglets datés : la clôture est datée à la réunion où l'action passe à « Fait ».
+const actionPlanTimeline = evaluate(`(() => {
+  const row = (ref, status, extra) => Object.assign({ ref, issue: 'SNZ-V3-040', decision: 'Action ' + ref, status, due: '', comment: '' }, extra || {});
+  const timeline = buildActionPlanTimeline_([
+    { meetingDate: new Date(2026, 6, 23), rows: [row('10', 'Fait'), row('11', 'Fait'), row('12', 'En cours'), row('14', 'Reporté'), row('16', 'Fait'), row('17', 'En cours')] },
+    { meetingDate: new Date(2026, 1, 5), rows: [
+      row('10', 'Fait', { comment: '05/03/2025 : relance\\n12/01/2026 : soldé', due: new Date(2025, 11, 1) }),
+      row('11', 'En cours'), row('12', 'En cours'), row('13', 'En cours'), row('14', 'En cours'),
+      row('16', 'Fait', { comment: 'Sans date', due: new Date(2025, 10, 30) })
+    ] },
+    { meetingDate: new Date(2026, 8, 3), rows: [row('10', 'Fait'), row('11', 'Fait'), row('12', 'Fait'), row('14', 'Reporté'), row('15', 'Fait'), row('16', 'Fait'), row('17', 'En cours')] }
+  ]);
+  return Object.fromEntries(timeline.map(item => [item.ref, { status: item.status, closedAt: item.closedAt ? toIsoDate_(item.closedAt) : '' }]));
+})()`);
+assert.deepEqual(actionPlanTimeline['10'], { status: 'Fait', closedAt: '2026-01-12' });
+assert.deepEqual(actionPlanTimeline['11'], { status: 'Fait', closedAt: '2026-07-23' });
+assert.deepEqual(actionPlanTimeline['12'], { status: 'Fait', closedAt: '2026-09-03' });
+assert.deepEqual(actionPlanTimeline['13'], { status: 'Fait', closedAt: '2026-07-23' });
+assert.deepEqual(actionPlanTimeline['14'], { status: 'Reporté', closedAt: '' });
+assert.deepEqual(actionPlanTimeline['15'], { status: 'Fait', closedAt: '2026-09-03' });
+assert.deepEqual(actionPlanTimeline['16'], { status: 'Fait', closedAt: '2025-11-30' });
+assert.deepEqual(actionPlanTimeline['17'], { status: 'En cours', closedAt: '' });
+
+const actionPlanSnapshotSelection = evaluate(`selectActionPlanSnapshots_([
+  { name: 'A', meetingDate: new Date(2025, 11, 18) },
+  { name: 'B', meetingDate: new Date(2026, 2, 12) },
+  { name: 'C', meetingDate: new Date(2026, 3, 2) },
+  { name: 'D', meetingDate: new Date(2026, 8, 17) }
+], new Date(2026, 8, 29)).map(snapshot => snapshot.name)`);
+assert.deepEqual(actionPlanSnapshotSelection, ['B', 'C', 'D']);
+assert.equal(evaluate("actionPlanStatusFromValue_('Due')"), 'OPEN');
+assert.equal(evaluate("actionPlanStatusFromValue_('Deferred')"), 'DROPPED');
+assert.equal(evaluate("actionPlanStatusFromValue_('Clôturée')"), 'DONE');
 assert.equal(evaluate("isAleaStationInScope_('290.0')"), true);
 assert.equal(evaluate("isAleaStationInScope_('P280.0')"), true);
 assert.equal(evaluate("isAleaStationInScope_('290B')"), true);

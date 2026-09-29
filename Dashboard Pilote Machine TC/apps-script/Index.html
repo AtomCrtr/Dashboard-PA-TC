@@ -622,6 +622,16 @@
     .review-heading:first-of-type { margin-top: 0; }
     .review-cost-controls { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 14px 0; }
     .review-cost-controls p { margin: 0; color: var(--muted); font-size: 12px; }
+    :root { --tone-open: #1f2933; --tone-recent: #2563c9; --tone-stale: #c8372d; --tone-unknown: #a7b0b1; }
+    .action-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0 0 14px; padding: 10px 12px; list-style: none; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: 12px; color: var(--muted); }
+    .action-legend li { display: inline-flex; align-items: center; gap: 7px; }
+    .action-legend .swatch { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+    .action-legend .tone-open { background: var(--tone-open); }
+    .action-legend .tone-recent { background: var(--tone-recent); }
+    .action-legend .tone-stale { background: var(--tone-stale); }
+    .action-legend .tone-unknown { background: var(--tone-unknown); }
+    .action-legend b { color: var(--ink); font-variant-numeric: tabular-nums; }
+    .action-legend .legend-title { color: var(--ink); font-weight: 600; }
     .review-source-switch { grid-template-columns: repeat(3, minmax(0, 1fr)); width: min(420px, 100%); }
     .review-nc-kpis { grid-template-columns: repeat(3, minmax(150px, 1fr)); max-width: 75%; }
     .review-rule { display: inline-flex; align-items: center; gap: 7px; margin-top: 8px; color: var(--muted); font-size: 12px; }
@@ -820,6 +830,13 @@
             <button type="button" data-review-source="COMBINED" aria-pressed="false">NC + MES</button>
           </div>
         </div>
+        <ul class="action-legend" id="actionPlanLegend" aria-label="Légende du suivi plan d’actions">
+          <li class="legend-title">Couleur des barres = suivi dans les plans MFT TC</li>
+          <li><span class="swatch tone-open" aria-hidden="true"></span>Action ouverte / en cours <b data-action-count="EN_COURS"></b></li>
+          <li><span class="swatch tone-recent" aria-hidden="true"></span>Action terminée depuis moins de 6 mois <b data-action-count="TERMINEE_RECENTE"></b></li>
+          <li><span class="swatch tone-stale" aria-hidden="true"></span>Aucune action, action reportée ou clôturée depuis plus de 6 mois <b data-action-count="NON_TRAITEE"></b></li>
+          <li><span class="swatch tone-unknown" aria-hidden="true"></span>Suivi indisponible</li>
+        </ul>
         <section class="dashboard-grid" id="reviewDashboard">
           <article class="panel"><h3 class="panel-title" id="reviewFamilyCostTitle">Coût des NC par famille</h3><p class="panel-subtitle" id="reviewFamilyCostSubtitle">Axe X = famille · axe Y = coût estimé en euros</p><div class="chart tall" id="reviewFamilyCostChart"></div></article>
           <article class="panel"><h3 class="panel-title" id="reviewImmoCostTitle">Coût des NC par IMMO</h3><p class="panel-subtitle" id="reviewImmoCostSubtitle">NC dont l’IMMO est renseigné · coût selon les données disponibles</p><div class="chart tall" id="reviewImmoCostChart"></div></article>
@@ -1019,7 +1036,7 @@
       document.getElementById('detailClose').addEventListener('click', closeDetails);
       document.getElementById('detailBackdrop').addEventListener('click', closeDetails);
       document.getElementById('chartFocusBackdrop').addEventListener('click', closeChartFocus_);
-      document.getElementById('detailSearch').addEventListener('input', renderDetailRows);
+      document.getElementById('detailSearch').addEventListener('input', debounce(renderDetailRows, 120));
       document.getElementById('detailTableWrap').addEventListener('click', event => {
         const button = event.target.closest('.detail-sort');
         if (!button) return;
@@ -1052,15 +1069,29 @@
         button.addEventListener('click', () => setPeriod(button.dataset.days, true));
       });
       ['from', 'to'].forEach(id => document.getElementById(id).addEventListener('change', clearPeriodPreset));
-      window.addEventListener('resize', debounce(() => {
-        redrawActiveView_();
-      }, 180));
       window.addEventListener('load', () => {
         redrawActiveView_();
       });
       if (window.ResizeObserver) {
-        const observer = new ResizeObserver(debounce(redrawActiveView_, 80));
-        ['viewOverview', 'viewDashboard', 'viewAlea', 'viewNc'].forEach(id => observer.observe(document.getElementById(id)));
+        // Redessiner seulement si la largeur change : le dessin des graphiques modifie la hauteur
+        // des vues et relancerait sinon l'observateur (et un second tracé via l'évènement resize).
+        const observedWidths = new WeakMap();
+        const redrawOnWidthChange = debounce(redrawActiveView_, 120);
+        const observer = new ResizeObserver(entries => {
+          const widthChanged = entries.some(entry => {
+            const width = Math.round(entry.contentRect.width);
+            const previous = observedWidths.get(entry.target);
+            observedWidths.set(entry.target, width);
+            return previous !== undefined && previous !== width;
+          });
+          if (widthChanged) redrawOnWidthChange();
+        });
+        ['viewOverview', 'viewDashboard', 'viewAlea', 'viewNc'].forEach(id => {
+          const view = document.getElementById(id);
+          if (view) observer.observe(view);
+        });
+      } else {
+        window.addEventListener('resize', debounce(redrawActiveView_, 180));
       }
       enhanceChartPanels_();
       restoreFiltersPanelState_();
@@ -1288,7 +1319,7 @@
       const actionCostNote = document.getElementById('reviewActionCostQualityNote');
       if (actionCostQuality.status === 'CALCULABLE') {
         actionCostValue.textContent = `${formatDecimal(actionCostQuality.untreatedPercentage)} %`;
-        actionCostNote.textContent = `${formatCurrency(actionCostQuality.untreatedCost)} non traités / ${formatCurrency(actionCostQuality.classifiedCost)} classifiables${actionCostQuality.unknownCost ? ` · ${formatCurrency(actionCostQuality.unknownCost)} non classifiés` : ''}`;
+        actionCostNote.textContent = `${formatCurrency(actionCostQuality.untreatedCost)} en rouge / ${formatCurrency(actionCostQuality.classifiedCost)} · en cours ${formatCurrency(actionCostQuality.inProgressCost)} · terminé < 6 mois ${formatCurrency(actionCostQuality.recentlyClosedCost)}${actionCostQuality.unknownCost ? ` · ${formatCurrency(actionCostQuality.unknownCost)} non classifiés` : ''}`;
       } else if (actionCostQuality.status === 'VIDE') {
         actionCostValue.textContent = '–';
         actionCostNote.textContent = 'Aucun coût NC + MES par famille sur la période';
@@ -1956,7 +1987,16 @@
         table.addRows(rows);
         return table;
       };
-      const actionPlanBarColor = status => status === 'OUI' ? '#5f9f7b' : status === 'NON' ? '#d7a45f' : '#a7b0b1';
+      const actionPlanTones = {
+        EN_COURS: { color: '#1f2933', label: 'action ouverte / en cours' },
+        TERMINEE_RECENTE: { color: '#2563c9', label: 'action terminée depuis moins de 6 mois' },
+        NON_TRAITEE: { color: '#c8372d', label: 'aucune action en cours ni récente' },
+        INCONNU: { color: '#a7b0b1', label: 'suivi indisponible' }
+      };
+      const actionPlanBarColor = status => (actionPlanTones[status] || actionPlanTones.INCONNU).color;
+      const actionPlanTooltip = (item, valueText) => item.actionPlanStatus
+        ? `${item.label}\n${valueText}\nPlan d’actions : ${(actionPlanTones[item.actionPlanStatus] || actionPlanTones.INCONNU).label}`
+        : `${item.label}\n${valueText}`;
       const isUsableFamilyLabel = label => {
         const normalized = normalizeSearch_(label).replace(/[^A-Z0-9]/g, '');
         return Boolean(normalized) && !['FAMILLENONRENSEIGNEE', 'FAMILLEINCONNUE', 'NONRENSEIGNE', 'NONRENSEIGNEE', 'SANSFAMILLE'].includes(normalized);
@@ -1979,8 +2019,9 @@
       const costs = review.costs || {};
       const actionCoverage = review.actionPlanCoverage || {};
       const actionTrackingHint = actionCoverage.complete
-        ? 'Vert doux : action en cours dans un plan TC · orange : aucune action en cours'
+        ? 'Couleur = suivi des plans MFT TC (voir légende)'
         : `Suivi des plans TC incomplet (${actionCoverage.sourcesRead || 0}/${actionCoverage.sourceCount || 0} sources lues) · gris : statut inconnu`;
+      renderActionPlanLegend_(actionCoverage);
       const drawEmpty = (id, message) => { document.getElementById(id).innerHTML = `<div class="detail-empty">${escapeHtml(message)}</div>`; };
       const drawColumns = (id, rows, label, valueKey, color, selection, source, config = {}) => {
         const target = document.getElementById(id);
@@ -1994,11 +2035,13 @@
         const table = typedData([
           { type: 'string', label },
           { type: 'number', label: valueKey === 'cost' ? 'Coût estimé (€)' : 'Heures' },
-          { type: 'string', role: 'style' }
+          { type: 'string', role: 'style' },
+          { type: 'string', role: 'tooltip' }
         ], visibleRows.map(item => [
           config.fullLabels ? String(item.label) : shorten(String(item.label), 38),
           Number(item[valueKey]) || 0,
-          `color: ${item.actionPlanStatus ? actionPlanBarColor(item.actionPlanStatus) : color}`
+          `color: ${item.actionPlanStatus ? actionPlanBarColor(item.actionPlanStatus) : color}`,
+          actionPlanTooltip(item, valueKey === 'cost' ? formatCurrency(item[valueKey]) : `${formatDecimal(item[valueKey])} h`)
         ]));
         const chart = new google.visualization.ColumnChart(target);
         if (drawChart(id, chart, table, {
@@ -2017,11 +2060,13 @@
         const table = typedData([
           { type: 'string', label: 'IMMO' },
           { type: 'number', label: 'Coût estimé (€)' },
-          { type: 'string', role: 'style' }
+          { type: 'string', role: 'style' },
+          { type: 'string', role: 'tooltip' }
         ], visibleRows.map(item => [
           immoChartLabel(item),
           Number(item.cost) || 0,
-          `color: ${actionPlanBarColor(item.actionPlanStatus)}`
+          `color: ${actionPlanBarColor(item.actionPlanStatus)}`,
+          actionPlanTooltip(item, formatCurrency(item.cost))
         ]));
         const chart = new google.visualization.BarChart(document.getElementById(id));
         if (drawChart(id, chart, table, {
@@ -2253,9 +2298,15 @@
       document.getElementById('detailDrawer').setAttribute('aria-hidden', 'true');
     }
 
+    const detailSearchCache_ = new WeakMap();
+    function detailSearchText_(row) {
+      if (!detailSearchCache_.has(row)) detailSearchCache_.set(row, normalizeSearch_(Object.values(row).join(' ')));
+      return detailSearchCache_.get(row);
+    }
+
     function renderDetailRows() {
       const query = normalizeSearch_(document.getElementById('detailSearch').value);
-      const rows = sortDetailRows_((window.currentDetailRows || []).filter(row => !query || normalizeSearch_(Object.values(row).join(' ')).includes(query)));
+      const rows = sortDetailRows_((window.currentDetailRows || []).filter(row => !query || detailSearchText_(row).includes(query)));
       const wrapper = document.getElementById('detailTableWrap');
       if (!rows.length) {
         wrapper.innerHTML = '<div class="detail-empty">Aucun événement correspondant</div>';
@@ -2460,6 +2511,15 @@
 
     function formatNumber(value) { return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(value || 0); }
     function formatDecimal(value) { return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(value || 0); }
+    function renderActionPlanLegend_(coverage) {
+      const legend = document.getElementById('actionPlanLegend');
+      if (!legend) return;
+      const summary = (coverage && coverage.summary) || {};
+      legend.querySelectorAll('[data-action-count]').forEach(node => {
+        const count = Number(summary[node.dataset.actionCount]);
+        node.textContent = coverage && coverage.available && Number.isFinite(count) ? `(${formatNumber(count)} action${count > 1 ? 's' : ''})` : '';
+      });
+    }
     function formatCurrency(value) { return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value || 0); }
     function formatDateTime(value) { return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value)); }
     function formatInputDate(value) { const [year, month, day] = value.split('-'); return `${day}/${month}/${year}`; }

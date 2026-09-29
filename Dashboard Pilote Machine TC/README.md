@@ -1,6 +1,6 @@
 # Dashboard Pilote Machine PA
 
-Application interne de pilotage des aléas machine, des non-conformités (NC) et des extractions MES pour le périmètre **Pointe Avant Structure (PA STR)**. Le référentiel MFT reste conservé côté administration, sans page dédiée dans l’interface.
+Application interne de pilotage des aléas machine, des non-conformités (NC) et des extractions MES pour le périmètre **Tronçon Central (TC)**. Le référentiel MFT reste conservé côté administration, sans page dédiée dans l’interface.
 
 Le projet est une application web Google Apps Script reliée à Google Sheets et Google Drive. Il n’y a pas de serveur local à maintenir : le code est déployé dans un projet Apps Script lié à un classeur central.
 
@@ -121,7 +121,7 @@ Les commandes principales restent directement accessibles dans **Dashboard Machi
 - Pour les aléas production, les seuls critères d’inclusion sont ceux de la ligne source : colonne `Section` au périmètre PA et colonne `Poste` à 280/290, variantes A/B/C comprises. L’événement reste visible si l’IMMO manque, est inconnu ou appartient à un autre périmètre dans le master ; le master sert uniquement à enrichir et à calculer la couverture. Une NC sans IMMO mais avec un nom de machine, un poste ou une indication famille est conservée dans les volumes, familles, postes et détails ; elle reste exclue du Pareto IMMO et de la couverture master. Une ligne NC sans aucune identité exploitable reste visible dans l’audit des sources, mais n’alimente pas les analyses.
 - Les faits non rapprochés restent visibles dans les KPI, défauts et contrôles qualité. Le pilotage affiche la couverture famille, IMMO, MSN et durée des aléas MES afin que les données incomplètes ne disparaissent pas de la lecture métier.
 - Un IMMO absent de la source et un IMMO fourni mais non résolu sont comptés séparément. Une famille héritée du master est résolue pour l’analyse, mais ne masque pas l’absence de famille dans la source.
-- La revue valorise une NC à `300 €` et une heure d’indisponibilité UPA/MEDU issue de MES à `100 €`. Ces hypothèses sont affichées dans l’interface et ne remplacent pas un coût comptable.
+- La revue valorise une NC selon les données disponibles et une heure d’indisponibilité UPA/MEDU issue de MES à `116 €` (`COUT_HEURE_PERDUE_EUR`). Ces hypothèses sont affichées dans l’interface et ne remplacent pas un coût comptable.
 - Tous les graphiques restent filtrables par période, famille, source, IMMO, poste et MSN. Le MSN représente l’avion concerné.
 - Pour les NC, le KPI et les graphiques utilisent `NB_NC` lorsqu’il est renseigné, sinon `QUANTITE`.
 - Toutes les NC MES de la catégorie concernée sont conservées dans `NC_MES_PREVISIONNELLES`, avec le numéro provenant de la colonne `N° NC` lorsqu’il existe. Elles restent en préparation et n’alimentent pas encore les faits NC ni les KPI. Pour l’instant, les NC du dashboard proviennent exclusivement de la feuille historique `Données NC PA`.
@@ -131,6 +131,21 @@ Les commandes principales restent directement accessibles dans **Dashboard Machi
 - Les poids par défaut sont `ALEA = 1`, `NC = 5`, `ALEA_MES = 1`.
 - Un taux « impacts / 1 000 perçages » n’est pas un pourcentage.
 - Une déclaration liée à plusieurs IMMO est éclatée en une ligne par IMMO ; les coûts et les volumes NC sont répartis entre ces lignes afin de ne pas compter plusieurs fois la même NC.
+
+## Suivi des plans d’actions (Pilotage, item 2)
+
+Les barres des graphiques « Coût par famille » et « Coût par IMMO » sont colorées selon les classeurs `ID_FICHIER_PLAN_ACTIONS_TC_370` et `ID_FICHIER_PLAN_ACTIONS_TC_355_360_OSW` :
+
+| Couleur | Signification |
+| --- | --- |
+| Noir | Au moins une action ouverte ou en cours (`Open`, `Due`, `En cours`, statut vide d’une action récente) |
+| Bleu | Aucune action ouverte, mais une action terminée dans les 6 derniers mois |
+| Rouge | Aucune action, action reportée/abandonnée, ou dernière action clôturée depuis plus de 6 mois |
+| Gris | Plan illisible ou incomplet : statut inconnu |
+
+La date de clôture n’existe pas dans les onglets datés du plan : elle est reconstituée à partir de l’historique. Le script lit les onglets des 6 derniers mois et l’onglet précédent ; une action est datée à la première réunion où elle passe à `Done`. Une action déjà terminée dans le premier onglet lu est datée par la dernière date de son commentaire, puis par son échéance. Une action ouverte qui disparaît du plan est considérée close à la réunion suivante. Si le classeur ne contient plus d’onglets datés, la table `MFT_ACTIONS_OFFICIEL` et sa colonne `DATE_CLOTURE` sont utilisées.
+
+Le KPI « Coûts non traités » donne la part des coûts NC + MES par famille en rouge ; sa note détaille les montants en noir (en cours) et en bleu (terminés depuis moins de 6 mois). L’analyse détaillée des plans et les recommandations d’organisation sont dans [l’analyse du 29 septembre 2026](../Dashboard%20Pilote%20Machine%20PA/docs/audits/ANALYSE-PLANS-ACTIONS-2026-09-29.md).
 
 ## Import MES
 
