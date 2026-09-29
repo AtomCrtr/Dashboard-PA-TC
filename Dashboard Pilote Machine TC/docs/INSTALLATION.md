@@ -11,7 +11,6 @@ Le nouveau classeur Google Sheets est nommé `BDD Pilotage Machine`. Ne transfor
 ```mermaid
 flowchart LR
   MASTER[BDD_Master_amélio] --> SCRIPT[Apps Script BDD Pilotage Machine]
-  ALEAS[Remontées aléas production] --> SCRIPT
   NC[Données NC PA - historique] --> SCRIPT
   MES[Dossier Drive Dépôt MES - XLSX manuel] --> SCRIPT
   SCRIPT <--> MFT[Tables MFT officielles normalisées]
@@ -44,10 +43,10 @@ Dashboard Machine/
   BDD Pilotage Machine (Google Sheets)
 ```
 
-1. Chargez `BDD_Remontées Aléas Machine.xlsx` dans `Sources`.
+1. Chargez le classeur contenant le master et les NC dans `Sources` (les remontées aléas production ne sont plus utilisées).
 2. Dans Drive, faites un clic droit, puis **Ouvrir avec > Google Sheets**.
 3. Utilisez **Fichier > Enregistrer au format Google Sheets** si Drive ne l’a pas déjà converti.
-4. Vérifiez la présence exacte de `BDD_Master_amélio`, `Remontées aléas production` et `Données NC PA`.
+4. Vérifiez la présence exacte de `BDD_Master_amélio` et `Données NC PA`.
 5. Créez un classeur Google Sheets vide nommé `BDD Pilotage Machine`.
 
 Ne renommez pas les feuilles sources historiques. Le script essaie d’abord leurs noms exacts, puis tolère les espaces accidentels en début ou fin de nom. Dans le fichier local analysé, la feuille porte précisément le nom ` BDD_Master_amélio`, avec un espace initial ; cette variation est prise en charge. La feuille `Données NC PA` reste la source historique des NC, avec l’IMMO lorsqu’il existe et le poste ou nom de machine lorsqu’il est renseigné ; elle demeure obligatoire dans le contrat analytique actuel. Les NC MES validées sont conservées dans la file de préparation et ne sont pas encore intégrées.
@@ -120,7 +119,6 @@ Dans **Apps Script > Paramètres du projet > Propriétés du script**, créez le
 | Clé | Valeur attendue |
 |---|---|
 | `ID_FICHIER_MASTER` | ID du fichier contenant `BDD_Master_amélio` |
-| `ID_FICHIER_ALEAS` | ID du fichier contenant `Remontées aléas production` |
 | `ID_FICHIER_NC` | ID du fichier contenant `Données NC TC`, utilisé pour les NC historiques et leur enrichissement |
 | `ID_FICHIER_PLANNING_MSN` | ID du planning mensuel MSN PA STR |
 | `ID_FICHIER_TAUX_PERCAGE` | ID du TCD de perçages par famille |

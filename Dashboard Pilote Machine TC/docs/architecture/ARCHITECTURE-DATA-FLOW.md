@@ -11,7 +11,7 @@ Ce document décrit l’architecture actuelle du Dashboard Pilote Machine PA. Le
 ```mermaid
 flowchart LR
   subgraph METIER["Entrées métier"]
-    SOURCES["BDD_Master_amélio<br/>Remontées aléas production<br/>Données NC TC"]
+    SOURCES["BDD_Master_amélio<br/>Données NC TC"]
     MES["Drive MES_A_DEPOSER<br/>CSV · XLSX · Google Sheets"]
   end
   subgraph PIPELINE["Apps Script et préparation"]

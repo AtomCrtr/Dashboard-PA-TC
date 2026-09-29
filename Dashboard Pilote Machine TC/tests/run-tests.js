@@ -272,8 +272,8 @@ const sourceIds = evaluate(`(() => {
     globalThis.SpreadsheetApp = originalSpreadsheet;
   }
 })()`);
-assert.equal(sourceIds.aleas, '1rFeIB7i5cfZNvnx37O-NHi_fKXlp0SDFgOZkMIyk9Ws');
-assert.equal(sourceIds.nc, sourceIds.aleas);
+assert.equal(sourceIds.aleas, undefined);
+assert.equal(sourceIds.nc, '1rFeIB7i5cfZNvnx37O-NHi_fKXlp0SDFgOZkMIyk9Ws');
 assert.equal(sourceIds.planning, '1UFoE2rUJmJy_KM77JRUAAl_ffhgz9rh7JJt3wcUVf_Y');
 assert.equal(sourceIds.drilling, '1vlbPl6jxtZOa--C6W7AQLbKRBvjUbGf-JaX2L__fUrk');
 assert.equal(sourceIds.docMartin, '1hmoC2X4iQv3fyAuZkUV2j57zWm57uu2O8saXuEaP4lw');
@@ -471,7 +471,7 @@ assert.equal(docMartinIdentity.ambiguous, undefined);
 assert.equal(docMartinIdentity.crossScope, undefined);
 assert.equal(docMartinIdentity.nonDrilling, undefined);
 assert.equal(docMartinIdentity.masterFamily, 'Famille master');
-assert.equal(evaluate("APP.parameterDefaults.ID_FICHIER_ALEAS"), '1rFeIB7i5cfZNvnx37O-NHi_fKXlp0SDFgOZkMIyk9Ws');
+assert.equal(evaluate("APP.parameterDefaults.ID_FICHIER_ALEAS"), undefined);
 
 const drillingCategoryFilter = evaluate(`(() => {
   const master = buildMasterIndex_([
@@ -654,47 +654,14 @@ assert.ok(!html.includes('id="stationSuggestions"'));
 assert.ok(!html.includes('id="reviewMonthlyCostPerAircraftChart"'));
 assert.ok(html.includes('IMMO cité dans MES'));
 assert.ok(html.includes('BDD Immo et Famille'));
-assert.ok(html.includes('Waterspiders'));
+assert.ok(!html.includes('Waterspiders'));
+assert.ok(html.includes('class="data-flow-svg"'));
 assert.ok(html.includes('BDD Aléas MES'));
 assert.ok(html.includes('class="detail-sort"'));
 assert.ok(html.includes('function sortDetailRows_'));
 
-const audit = evaluate(`buildQualityAudit_({
-  ALEA: { total: 10, identified: 9, masterMatched: 8, familyMatched: 8, commentsPresent: 4, downtimePresent: 0 },
-  NC: emptyQualityCounter_(),
-  ALEA_MES: { total: 4, identified: 2, masterMatched: 2, familyMatched: 3, commentsPresent: 4, downtimePresent: 1 }
-}, { IMMO_COMMENTAIRE: 2, NON_TROUVE: 2 })`);
-assert.equal(audit.sources[0].masterCoverage, 80);
-assert.equal(audit.sources[2].familyCoverage, 75);
-assert.equal(audit.mes.methods[0].count, 2);
 
-const sourceQualityAudit = evaluate(`(() => {
-  const master = buildMasterIndex_([
-    { IMMO: '1700001', FAMILLE: 'FAM-A', SECTION: 'TC', CATEGORIE: 'Perçage', JEU: 'P280' }
-  ]);
-  return buildRawSourceQualityAudit_('ALEA', 'Aléas production', 'Remontées aléas production', [
-    { DATE: '2026-08-18', IMMO: '1700001', FAMILLE: 'FAM-A', SECTION: 'TC', POSTE: 'P280', QUANTITE: 2, HYPOTHESECAUSE: 'Cause' },
-    { DATE: '2026-08-19', IMMO: '9999999', FAMILLE: '', SECTION: 'TC', POSTE: 'P280', QUANTITE: 1 },
-    { DATE: '2026-08-20', IMMO: '1700001', FAMILLE: 'FAM-A', SECTION: 'PA', POSTE: 'P280', QUANTITE: 1 },
-    { DATE: '2026-08-21', IMMO: '1700001', FAMILLE: 'FAM-A', SECTION: 'TC', POSTE: 'P300', QUANTITE: 1 },
-    { DATE: '', IMMO: '1700001', FAMILLE: 'FAM-A', SECTION: 'TC', POSTE: 'P280', QUANTITE: 'inconnu' }
-  ], master, {}, APP.aliases.aleas);
-})()`);
-assert.equal(sourceQualityAudit.rawRows, 5);
-assert.equal(sourceQualityAudit.rawQuantity, 6);
 // TC ne filtre pas les postes des aléas production (APP.scope.stations vide) : seule la ligne PA est exclue.
-assert.equal(sourceQualityAudit.retainedRows, 4);
-assert.equal(sourceQualityAudit.retainedFacts, 4);
-assert.equal(sourceQualityAudit.excludedRows, 1);
-assert.equal(sourceQualityAudit.rates.retainedRows.percentage, 80);
-assert.equal(sourceQualityAudit.immoProvided, 5);
-assert.equal(sourceQualityAudit.immoMissing, 0);
-assert.equal(sourceQualityAudit.immoUnrecognized, 1);
-assert.equal(sourceQualityAudit.rates.dateComplete.percentage, 80);
-assert.equal(sourceQualityAudit.quantityInvalid, 1);
-assert.ok(!sourceQualityAudit.exclusions.some(item => item.code === 'IMMO_NON_RECONNU'));
-assert.ok(sourceQualityAudit.exclusions.some(item => item.code === 'SECTION_HORS_PERIMETRE'));
-assert.ok(!sourceQualityAudit.exclusions.some(item => item.code === 'POSTE_HORS_PERIMETRE'));
 
 const unknownProductionImmo = evaluate(`(() => {
   const master = buildMasterIndex_([]);
@@ -724,157 +691,12 @@ assert.equal(evaluate("isAleaProductionSourceRowInScope_('TC', 280)"), true);
 assert.equal(evaluate("isAleaProductionSourceRowInScope_('TC', 290.0)"), true);
 assert.equal(evaluate("isAleaProductionSourceRowInScope_('TC', '')"), false);
 assert.equal(evaluate("isAleaProductionSourceRowInScope_('', 280)"), false);
-assert.equal(evaluate("assertAleaConsolidation_([{}], [APP.factsHeaders.map(header => header === 'SOURCE' ? 'ALEA' : '')])"), 1);
-assert.throws(() => evaluate('assertAleaConsolidation_([{}], [])'), /préserver FAITS_IMMO/);
-assert.throws(() => evaluate('assertAleaConsolidation_([], [])'), /ne contient aucune ligne/);
 
-const ncWithoutImmoMachine = evaluate(`(() => {
-  const master = buildMasterIndex_([]);
-  const target = [];
-  appendFacts_(target, [{ DATENC: '2026-08-18', NIMMO: '', MACHINE: 'P280 A', INDICATIONFAMILLE: 'FAM-SANS-IMMO', NC: 'NC-42', NBRNC: 2, QTE: 2, TYPOLOGIEDEFAUT: 'R1', CLENC: '46122' }], 'NC', APP.aliases.nc, master, {}, 'Données NC PA');
-  const noMachine = [];
-  appendFacts_(noMachine, [{ DATENC: '2026-08-18', NIMMO: '', NC: 'NC-43', NBRNC: 1, QTE: 1, CLENC: '46123' }], 'NC', APP.aliases.nc, master, {}, 'Données NC PA');
-  const index = Object.fromEntries(APP.factsHeaders.map((header, position) => [header, position]));
-  const quality = buildRawSourceQualityAudit_('NC', 'NC historiques', 'Données NC PA', [
-    { DATENC: '2026-08-18', NIMMO: '', MACHINE: 'P280 A', INDICATIONFAMILLE: 'FAM-SANS-IMMO', NC: 'NC-42', NBRNC: 2, QTE: 2 }
-  ], master, {}, APP.aliases.nc);
-  return {
-    fact: target[0],
-    noMachineFacts: noMachine.length,
-    analysis: buildSourceAnalysis_(target, index, 'NC', {}, { activityMsn: null, drillingByFamily: {} }),
-    quality
-  };
-})()`);
-assert.equal(ncWithoutImmoMachine.fact[4], '');
-assert.equal(ncWithoutImmoMachine.fact[5], 'FAM-SANS-IMMO');
-assert.equal(ncWithoutImmoMachine.fact[10], 'P280 A');
-assert.equal(ncWithoutImmoMachine.fact[26], 2);
-assert.equal(ncWithoutImmoMachine.noMachineFacts, 0);
-assert.equal(ncWithoutImmoMachine.analysis.kpis.total, 2);
-assert.equal(ncWithoutImmoMachine.analysis.kpis.withoutImmoQuantity, 2);
-assert.equal(ncWithoutImmoMachine.analysis.stations[0].label, 'P280 A');
-assert.equal(ncWithoutImmoMachine.quality.retainedRows, 1);
-assert.equal(ncWithoutImmoMachine.quality.retainedWithoutImmo, 1);
-assert.equal(ncWithoutImmoMachine.quality.immoMissing, 1);
-assert.equal(ncWithoutImmoMachine.quality.excludedRows, 0);
 
-const ncWithoutImmoFamily = evaluate(`(() => {
-  const master = buildMasterIndex_([
-    { IMMO: '1700001', FAMILLE: 'FAM-FAMILLE-SEULE', SECTION: 'TC', CATEGORIE: 'Perçage', JEU: 'P280' },
-    { IMMO: '1700002', FAMILLE: 'FAM-FAMILLE-SEULE', SECTION: 'TC', CATEGORIE: 'Perçage', JEU: 'P280' }
-  ]);
-  const target = [];
-  appendFacts_(target, [{ DATENC: '2026-08-18', NIMMO: '', INDICATIONFAMILLE: 'FAM-FAMILLE-SEULE', NC: 'NC-44', NBRNC: 1, QTE: 1, TYPOLOGIEDEFAUT: 'Délaminage', CLENC: '46124' }], 'NC', APP.aliases.nc, master, {}, 'Données NC PA');
-  const index = Object.fromEntries(APP.factsHeaders.map((header, position) => [header, position]));
-  const quality = buildRawSourceQualityAudit_('NC', 'NC historiques', 'Données NC PA', [
-    { DATENC: '2026-08-18', NIMMO: '', INDICATIONFAMILLE: 'FAM-FAMILLE-SEULE', NC: 'NC-44', NBRNC: 1, QTE: 1 }
-  ], master, {}, APP.aliases.nc);
-  return { fact: target[0], analysis: buildSourceAnalysis_(target, index, 'NC', {}, { activityMsn: null, drillingByFamily: {} }), quality };
-})()`);
-assert.equal(ncWithoutImmoFamily.fact[4], '');
-assert.equal(ncWithoutImmoFamily.fact[5], 'FAM-FAMILLE-SEULE');
-assert.equal(ncWithoutImmoFamily.fact[26], 1);
-assert.equal(ncWithoutImmoFamily.analysis.kpis.total, 1);
-assert.equal(ncWithoutImmoFamily.analysis.kpis.withoutImmoQuantity, 1);
-assert.equal(ncWithoutImmoFamily.analysis.kpis.masterCoverage, 0);
-assert.equal(ncWithoutImmoFamily.analysis.machines.length, 0);
-assert.ok(ncWithoutImmoFamily.analysis.families.some(item => item.label === 'FAM-FAMILLE-SEULE'));
-assert.equal(ncWithoutImmoFamily.quality.retainedRows, 1);
-assert.equal(ncWithoutImmoFamily.quality.immoMissing, 1);
-assert.equal(ncWithoutImmoFamily.quality.retainedWithoutImmo, 1);
 
-const ncWithUnknownImmo = evaluate(`(() => {
-  const master = buildMasterIndex_([
-    { IMMO: '1700001', FAMILLE: 'FAM-KNOWN', SECTION: 'TC', CATEGORIE: 'Perçage', JEU: 'P280' }
-  ]);
-  const record = { DATENC: '2026-04-30', SECTION: 'TC', NIMMO: '9999999', INDICATIONFAMILLE: 'FAM-UNKNOWN', NC: 'NC-S18', NBRNC: 1 };
-  const target = [];
-  appendFacts_(target, [record], 'NC', APP.aliases.nc, master, {}, 'Données NC PA');
-  const index = Object.fromEntries(APP.factsHeaders.map((header, position) => [header, position]));
-  const quality = buildRawSourceQualityAudit_('NC', 'NC historiques', 'Données NC PA', [record], master, {}, APP.aliases.nc);
-  return { fact: target[0], analysis: buildSourceAnalysis_(target, index, 'NC', {}, { activityMsn: null, drillingByFamily: {} }), quality };
-})()`);
-assert.equal(ncWithUnknownImmo.fact[4], '9999999');
-assert.equal(ncWithUnknownImmo.fact[5], 'FAM-UNKNOWN');
-assert.equal(ncWithUnknownImmo.fact[18], false);
-assert.equal(ncWithUnknownImmo.fact[26], 1);
-assert.equal(ncWithUnknownImmo.analysis.kpis.total, 1);
-assert.equal(ncWithUnknownImmo.analysis.kpis.withoutImmoQuantity, 0);
-assert.equal(ncWithUnknownImmo.analysis.kpis.masterCoverage, 0);
-assert.ok(ncWithUnknownImmo.analysis.machines.some(item => item.label === '9999999'));
-assert.equal(ncWithUnknownImmo.quality.retainedRows, 1);
-assert.equal(ncWithUnknownImmo.quality.retainedFacts, 1);
-assert.equal(ncWithUnknownImmo.quality.immoProvided, 1);
-assert.equal(ncWithUnknownImmo.quality.immoUnrecognized, 1);
-assert.equal(ncWithUnknownImmo.quality.excludedRows, 0);
 
-const ncWeekS18 = evaluate(`(() => {
-  const master = buildMasterIndex_([
-    { IMMO: '1700001', FAMILLE: 'FAM-KNOWN', SECTION: 'TC', CATEGORIE: 'Perçage', JEU: 'P280' }
-  ]);
-  const records = [];
-  for (let position = 0; position < 9; position += 1) {
-    const immo = position < 7 ? '1700001' : (position === 7 ? '9999998' : '9999999');
-    const family = position < 7 ? 'FAM-KNOWN' : 'FAM-UNKNOWN';
-    records.push({
-      DATENC: '2026-04-27', SECTION: 'TC',
-      NIMMO: immo,
-      INDICATIONFAMILLE: family,
-      NC: 'NC-S18-' + (position + 1), NBRNC: 1
-    });
-  }
-  const target = [];
-  appendFacts_(target, records, 'NC', APP.aliases.nc, master, {}, 'Données NC PA');
-  const consolidated = deduplicateFacts_(target);
-  const index = Object.fromEntries(APP.factsHeaders.map((header, position) => [header, position]));
-  const quality = buildRawSourceQualityAudit_('NC', 'NC historiques', 'Données NC PA', records, master, {}, APP.aliases.nc);
-  return { target: consolidated, analysis: buildSourceAnalysis_(consolidated, index, 'NC', {}, { activityMsn: null, drillingByFamily: {} }), quality };
-})()`);
-assert.equal(ncWeekS18.target.length, 9);
-assert.equal(ncWeekS18.analysis.kpis.total, 9);
-assert.deepEqual(ncWeekS18.analysis.trend.find(item => item[0] === '2026-S18'), ['2026-S18', 9]);
-assert.equal(ncWeekS18.analysis.kpis.masterCoverage, 78);
-assert.equal(ncWeekS18.quality.retainedRows, 9);
-assert.equal(ncWeekS18.quality.retainedFacts, 9);
-assert.equal(ncWeekS18.quality.immoUnrecognized, 2);
-assert.equal(ncWeekS18.quality.excludedRows, 0);
 
-const rawIdentityQuality = evaluate(`(() => {
-  const master = buildMasterIndex_([
-    { IMMO: '1700001', FAMILLE: 'FAM-A', SECTION: 'TC', CATEGORIE: 'Perçage', JEU: 'P280' },
-    { IMMO: '1700002', FAMILLE: 'FAM-PA', SECTION: 'PA', CATEGORIE: 'Perçage', JEU: 'P280' },
-    { IMMO: '1700003', FAMILLE: 'FAM-OUTIL', SECTION: 'TC', CATEGORIE: 'Outillage', JEU: 'P280' }
-  ]);
-  return [
-    evaluateRawSourceRecord_('ALEA', { IMMO: '1700001', FAMILLE: '', SECTION: 'TC', POSTE: 'P280' }, master, APP.aliases.aleas),
-    evaluateRawSourceRecord_('ALEA', { IMMO: '', FAMILLE: '', SECTION: 'TC', POSTE: 'P280' }, master, APP.aliases.aleas),
-    evaluateRawSourceRecord_('ALEA', { IMMO: '9999999', FAMILLE: '', SECTION: 'TC', POSTE: 'P280' }, master, APP.aliases.aleas),
-    evaluateRawSourceRecord_('ALEA', { IMMO: '1700002', FAMILLE: '', SECTION: 'TC', POSTE: 'P280' }, master, APP.aliases.aleas),
-    rawRecordMatchesQualityFilters_({ IMMO: '1700001', FAMILLE: '', SECTION: 'TC', POSTE: 'P280' }, APP.aliases.aleas, { family: 'FAM-A' }, master, 'ALEA')
-  ];
-})()`);
-assert.equal(rawIdentityQuality[0].exclusionCode, '');
-assert.equal(rawIdentityQuality[0].familyResolved, true);
-assert.equal(rawIdentityQuality[1].exclusionCode, '');
-assert.equal(rawIdentityQuality[1].retainedWithoutImmo, true);
-assert.equal(rawIdentityQuality[2].exclusionCode, '');
-assert.equal(rawIdentityQuality[3].exclusionCode, '');
-assert.equal(rawIdentityQuality[4], true);
 
-const mesIdentityQuality = evaluate(`(() => {
-  const master = buildMasterIndex_([
-    { IMMO: '1700001', FAMILLE: 'FAM-A', SECTION: 'TC', CATEGORIE: 'Perçage' }
-  ]);
-  return buildMesSourceQualityAudit_([
-    { SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', DATE: '2026-08-18', IMMO: '', IMMO_SOURCE: '', FAMILLE: '', SECTION: 'TC', QUANTITE: 1, COMMENTAIRE_INITIAL: '', METHODE_RAPPROCHEMENT: 'NON_TROUVE' },
-    { SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', DATE: '2026-08-18', IMMO: '9999999', IMMO_SOURCE: '9999999', FAMILLE: '', SECTION: 'TC', QUANTITE: 1, COMMENTAIRE_INITIAL: '', METHODE_RAPPROCHEMENT: 'IMMO_NON_RECONNU' },
-    { SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', DATE: '2026-08-18', IMMO: '1700001', IMMO_SOURCE: '1700001', FAMILLE: '', SECTION: 'TC', QUANTITE: 1, COMMENTAIRE_INITIAL: '', METHODE_RAPPROCHEMENT: 'IMMO_EXACT' }
-  ], master, {}).bySource[0];
-})()`);
-assert.equal(mesIdentityQuality.rawRows, 3);
-assert.equal(mesIdentityQuality.immoMissing, 1);
-assert.equal(mesIdentityQuality.immoProvided, 2);
-assert.equal(mesIdentityQuality.immoUnrecognized, 1);
 
 const missingFamilyAggregate = evaluate(`(() => {
   const target = {};
@@ -1201,8 +1023,6 @@ assert.equal(qlikMesExport.length, 1);
 assert.equal(qlikMesExport[0][6], 'P280 A');
 assert.equal(qlikMesExport[0][16], 'ALEA_MES');
 assert.equal(qlikMesExport[0][13], 0.5);
-assert.equal(evaluate("hasAuthoritativeManualNc_([{ SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens' }, { SOURCE: 'NC' }])"), true);
-assert.equal(evaluate("hasAuthoritativeManualNc_([{ SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens' }])"), false);
 
 const consolidatedMesSources = evaluate(`(() => {
   const target = [];
@@ -1302,65 +1122,7 @@ assert.equal(legacyMigration.famille, '401-M2-008-A-P2-3.2');
 assert.equal(legacyMigration.rapprochementIdentite, 'IMMO_MASTER_EXACT');
 assert.equal(legacyMigration.statut, 'En cours');
 
-const normalizedMft = evaluate(`(() => {
-  const existing = {
-    id: 'a1', refMft: '283', dateCreation: new Date('2026-08-01'), demandeur: 'MFT',
-    immo: '1710288', famille: 'F1', constat: 'C', decision: 'D', responsable: 'R',
-    echeanceInitiale: new Date('2026-08-31'), statut: 'En cours', priorite: '2',
-    sourceCreation: 'DASHBOARD_PA', creePar: 'Pilote'
-  };
-  const built = buildOfficialMftRecord_({ id: 'a1', statut: 'Fait' }, existing, {
-    id: 'a1', nextRef: 999, now: new Date('2026-08-20'), user: 'Auditeur'
-  });
-  return {
-    record: built.record,
-    typeSuivi: built.typeSuivi,
-    displayedLate: displayedMftStatus_({ statut: 'En cours', echeanceEffective: '2000-01-01' }),
-    displayedYearOnly: displayedMftStatus_({ statut: 'En cours', echeanceEffective: '2025' }),
-    deferred: normalizeMftStatus_('Deferred'),
-    headers: mftOfficialActionsHeaders_()
-  };
-})()`);
-assert.equal(normalizedMft.record.statut, 'Fait');
-assert.equal(normalizedMft.record.immo, '1710288');
-assert.equal(normalizedMft.record.decision, 'D');
-assert.equal(normalizedMft.record.refMft, '283');
-assert.equal(new Date(normalizedMft.record.echeanceInitiale).toISOString().slice(0, 10), '2026-08-31');
-assert.equal(normalizedMft.typeSuivi, 'CHANGEMENT_STATUT');
-assert.equal(normalizedMft.displayedLate, 'En retard');
-assert.equal(normalizedMft.displayedYearOnly, 'En cours');
-assert.equal(normalizedMft.deferred, 'Reporté');
-assert.ok(normalizedMft.headers.includes('ECHEANCE_INITIALE'));
-assert.ok(normalizedMft.headers.includes('RAPPROCHEMENT_IDENTITE'));
 
-const normalizedUpsert = evaluate(`(() => {
-  const rows = [mftOfficialActionsHeaders_().slice()];
-  const sheet = {
-    getLastRow: () => rows.length,
-    getLastColumn: () => rows[0].length,
-    getRange: (row, column, rowCount, columnCount) => ({
-      getDisplayValues: () => rows.slice(row - 1, row - 1 + rowCount).map(line => line.slice(column - 1, column - 1 + columnCount)),
-      getValues: () => rows.slice(row - 1, row - 1 + rowCount).map(line => line.slice(column - 1, column - 1 + columnCount)),
-      setValues: values => values.forEach((line, rowOffset) => {
-        const target = row - 1 + rowOffset;
-        rows[target] = rows[target] || new Array(rows[0].length).fill('');
-        line.forEach((value, columnOffset) => { rows[target][column - 1 + columnOffset] = value; });
-      })
-    })
-  };
-  const base = {
-    id: 'a1', refMft: '283', dateCreation: new Date('2026-08-01'), demandeur: 'MFT',
-    immo: '1710288', famille: 'F1', constat: 'C', decision: 'Décision 1', responsable: 'R',
-    echeanceInitiale: new Date('2026-08-31'), statut: 'En cours', priorite: '1'
-  };
-  const firstRow = upsertOfficialMftAction_(sheet, base);
-  const secondRow = upsertOfficialMftAction_(sheet, { ...base, decision: 'Décision 2' });
-  return { firstRow, secondRow, rows };
-})()`);
-assert.equal(normalizedUpsert.firstRow, 2);
-assert.equal(normalizedUpsert.secondRow, 2);
-assert.equal(normalizedUpsert.rows.length, 2);
-assert.equal(normalizedUpsert.rows[1][8], 'Décision 2');
 
 const sourceAnalysis = evaluate(`(() => {
   const headers = APP.factsHeaders;
@@ -1396,57 +1158,8 @@ const sourceNcKeepsUnmatchedImmo = evaluate(`(() => {
 assert.equal(sourceNcKeepsUnmatchedImmo.machines[0].label, '1799999');
 assert.equal(sourceNcKeepsUnmatchedImmo.details[0].immo, '1799999');
 
-const combinedAleaAnalysis = evaluate(`(() => {
-  const headers = APP.factsHeaders;
-  const index = Object.fromEntries(headers.map((header, position) => [header, position]));
-  const row = values => headers.map(header => Object.prototype.hasOwnProperty.call(values, header) ? values[header] : '');
-  return buildCombinedAleaAnalysis_([
-    row({ ID_EVENEMENT: 'prod-strong', DATE: new Date('2026-08-18'), SOURCE: 'ALEA', IMMO: '1607001', POSTE: 'P290', PROBLEME: 'Casse outil', COMMENTAIRE: 'Foret casse', TEMPS_PERDU_HEURES: 1 }),
-    row({ ID_EVENEMENT: 'mes-strong', DATE: new Date('2026-08-18'), SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', IMMO: '1607001', POSTE: 'P290 A', PROBLEME: 'Manquant', COMMENTAIRE: 'Outil casse', TEMPS_PERDU_HEURES: 0.5 }),
-    row({ ID_EVENEMENT: 'prod-probable', DATE: new Date('2026-08-21'), SOURCE: 'ALEA', IMMO: '1607002', POSTE: 'P280', PROBLEME: 'Défaut mécanique', TEMPS_PERDU_HEURES: 0.25 }),
-    row({ ID_EVENEMENT: 'mes-probable', DATE: new Date('2026-08-22'), SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', IMMO: '1607002', POSTE: 'P280 A', PROBLEME: 'Autre incident', TEMPS_PERDU_HEURES: 0.75 }),
-    row({ ID_EVENEMENT: 'prod-unmatched', DATE: new Date('2026-08-30'), SOURCE: 'ALEA', IMMO: '1607003', POSTE: 'P280', PROBLEME: 'Affichage HS' }),
-    row({ ID_EVENEMENT: 'mes-unmatched', DATE: new Date('2026-08-30'), SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', IMMO: '1607004', POSTE: 'P290', PROBLEME: 'Autre incident' }),
-    row({ ID_EVENEMENT: 'mes-grid', DATE: new Date('2026-08-30'), SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', IMMO: '1607005', POSTE: 'P290', COMMENTAIRE: 'Grille de percage' }),
-    row({ ID_EVENEMENT: 'mes-box-edu', DATE: new Date('2026-08-30'), SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', IMMO: '1607006', POSTE: 'P290', COMMENTAIRE: 'Incident Box EDU' })
-  ], index, { source: 'ALEA' });
-})()`);
-assert.equal(combinedAleaAnalysis.kpis.productionEvents, 3);
-assert.equal(combinedAleaAnalysis.kpis.mesEvents, 3);
-assert.equal(combinedAleaAnalysis.kpis.matchedEvents, 2);
-assert.equal(combinedAleaAnalysis.kpis.strongMatches, 1);
-assert.equal(combinedAleaAnalysis.kpis.probableMatches, 1);
-assert.equal(combinedAleaAnalysis.kpis.unmatchedProduction, 1);
-assert.equal(combinedAleaAnalysis.kpis.unmatchedMes, 1);
-assert.equal(combinedAleaAnalysis.detailsTotal, 4);
-assert.equal(combinedAleaAnalysis.rows[0].correspondence.label, 'Forte');
-assert.equal(combinedAleaAnalysis.rows[1].correspondence.label, 'Probable');
-assert.ok(combinedAleaAnalysis.rows[0].correspondence.reasons.includes('IMMO identique'));
-assert.equal(combinedAleaAnalysis.rows.filter(row => !row.production || !row.mes).length, 2);
 
-const familyCombinedMatch = evaluate(`combinedAleaMatch_(
-  { date: '2026-08-18', immo: '', station: '', family: 'SNZ-M2-224', keywords: [] },
-  { date: '2026-08-18', immo: '', station: '', family: 'SNZ-M2-224', keywords: [] }
-)`);
-assert.equal(familyCombinedMatch.label, 'Probable');
-assert.ok(familyCombinedMatch.reasons.includes('famille machine identique'));
 
-const combinedCommentMatch = evaluate(`(() => {
-  const master = buildMasterIndex_([
-    { IMMO: '1607025', FAMILLE: 'SNZ-M2-224', SECTION: 'TC' },
-    { IMMO: '1607026', FAMILLE: 'SNZ-M2-224', SECTION: 'TC' }
-  ]);
-  const headers = APP.factsHeaders;
-  const index = Object.fromEntries(headers.map((header, position) => [header, position]));
-  const row = values => headers.map(header => Object.prototype.hasOwnProperty.call(values, header) ? values[header] : '');
-  return buildCombinedAleaAnalysis_([
-    row({ ID_EVENEMENT: 'prod-comment', DATE: new Date('2026-08-18'), SOURCE: 'ALEA', IMMO: '1607026', POSTE: 'P290' }),
-    row({ ID_EVENEMENT: 'mes-comment', DATE: new Date('2026-08-18'), SOURCE: 'ALEA_MES', CATEGORIE: '03-Moyens', COMMENTAIRE: 'Aléa famille SNZ M2 224' })
-  ], index, {}, master);
-})()`);
-assert.equal(combinedCommentMatch.kpis.matchedEvents, 1);
-assert.equal(combinedCommentMatch.rows[0].immo, '1607026');
-assert.ok(combinedCommentMatch.rows[0].correspondence.reasons.includes('famille machine identique'));
 
 const sourceConsolidation = evaluate(`(() => {
   const master = buildMasterIndex_([
@@ -1623,7 +1336,7 @@ assert.ok(!html.includes('unpkg.com'));
 assert.ok(!html.includes('lucide.createIcons'));
 assert.ok(html.includes('id="actionTonePicker"'));
 assert.ok(html.includes('id="detailActions"'));
-assert.ok(html.includes('class="activity-steps"'));
+assert.ok(!html.includes('id="viewQuality"') && !html.includes('id="viewCombinedAlea"') && !html.includes('id="dashboard" hidden'));
 assert.ok(!html.includes('#c8372d'));
 console.log('OK — plan d’actions, cache et interface validés.');
 
@@ -1649,3 +1362,20 @@ assert.equal(editorGuard[1], 'ok');
 assert.match(editorGuard[2], /réservée aux éditeurs/);
 assert.match(sources[1], /function actualiserTout\(\) \{\r?\n  requireSpreadsheetEditor_\('actualiserTout'\);/);
 console.log('OK — contrôle d’accès des fonctions d’écriture validé.');
+
+// Waterspiders (aléas production) n'est plus consolidé : garde-fou NC/MES et lecture filtrée.
+assert.throws(() => evaluate('assertFactsConsolidation_([])'), /préserver FAITS_IMMO/);
+assert.equal(evaluate("assertFactsConsolidation_([['x']])"), 1);
+const factsWithoutProduction = evaluate(`(() => {
+  const original = readFactsForAnalysisIncludingProduction_;
+  const row = source => APP.factsHeaders.map(header => header === 'SOURCE' ? source : '');
+  readFactsForAnalysisIncludingProduction_ = () => ({ headers: APP.factsHeaders.slice(), schemaHeaders: APP.factsHeaders.slice(), values: [row('ALEA'), row('NC'), row('ALEA_MES')] });
+  try {
+    return readFactsForAnalysis_({}).values.map(values => values[APP.factsHeaders.indexOf('SOURCE')]);
+  } finally {
+    readFactsForAnalysisIncludingProduction_ = original;
+  }
+})()`);
+assert.deepEqual(factsWithoutProduction, ['NC', 'ALEA_MES']);
+assert.ok(!sources[1].includes('ID_FICHIER_ALEAS, APP.sourceSheets.aleas'));
+console.log('OK — sources NC / MES uniquement.');

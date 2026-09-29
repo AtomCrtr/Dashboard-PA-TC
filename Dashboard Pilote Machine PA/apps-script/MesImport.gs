@@ -120,10 +120,6 @@ function readStagedMes_() {
     .map(row => Object.fromEntries(headers.map((header, index) => [header, row[index]])));
 }
 
-function hasAuthoritativeManualNc_(rows) {
-  return (rows || []).some(row => clean_(row.SOURCE) === 'NC');
-}
-
 function readMesFile_(file) {
   const mimeType = file.getMimeType();
   if (mimeType === MimeType.CSV || /csv|text\/plain/i.test(mimeType)) {

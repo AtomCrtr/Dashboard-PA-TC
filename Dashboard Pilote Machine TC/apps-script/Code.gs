@@ -191,46 +191,6 @@ function defaultPrewarmFilters_() {
   return { family: '', source: '', immo: '', station: [], msn: '', from: dateKey_(yearAgo), to: dateKey_(today) };
 }
 
-function diagnostiquerDatesAleasProduction() {
-  const parameters = getParameters_();
-  const spreadsheet = SpreadsheetApp.openById(parameters.ID_FICHIER_ALEAS);
-  const sheet = findSourceSheet_(spreadsheet, APP.sourceSheets.aleas);
-  if (!sheet) throw new Error(`Feuille introuvable : « ${APP.sourceSheets.aleas} ».`);
-  const values = sheet.getDataRange().getValues();
-  const displayValues = sheet.getDataRange().getDisplayValues();
-  const sourceHeaders = (values.shift() || []).map(clean_);
-  displayValues.shift();
-  const headers = canonicalizeSourceHeaders_(sourceHeaders, values, APP.sourceSheets.aleas);
-  const dateColumn = headers.findIndex(header => normalizeHeader_(header) === normalizeHeader_('Date'));
-  if (dateColumn < 0) throw new Error('Colonne « Date » introuvable dans la source aléas.');
-  const sourceRows = values.filter(row => row.some(value => clean_(value) !== ''));
-  const factsSheet = getActiveFactsSheet_(SpreadsheetApp.getActive());
-  const factsValues = factsSheet && factsSheet.getLastRow() > 1 ? factsSheet.getDataRange().getValues() : [];
-  const factsHeaders = factsValues.length ? factsValues.shift().map(clean_) : [];
-  const factsSourceColumn = factsHeaders.indexOf('SOURCE');
-  const factsDateColumn = factsHeaders.indexOf('DATE');
-  const aleaFacts = factsValues.filter(row => clean_(row[factsSourceColumn]) === 'ALEA');
-  const summarize = (rows, column) => ({
-    total: rows.length,
-    nonEmpty: rows.filter(row => clean_(row[column]) !== '').length,
-    parseable: rows.filter(row => parseDate_(row[column])).length,
-    samples: rows.slice(0, 8).map((row, index) => ({
-      row: index + 2,
-      raw: row[column],
-      display: displayValues[index] ? displayValues[index][column] : '',
-      type: Object.prototype.toString.call(row[column]),
-      parsed: dateKey_(parseDate_(row[column]))
-    }))
-  });
-  return {
-    sourceSheet: sheet.getName(),
-    sourceDateColumn: headers[dateColumn],
-    source: summarize(sourceRows, dateColumn),
-    factsAleas: summarize(aleaFacts, factsDateColumn),
-    generatedAt: new Date().toISOString()
-  };
-}
-
 function actualiserToutUnlocked_() {
     const startedAt = new Date();
     const parameters = getParameters_();
@@ -240,10 +200,8 @@ function actualiserToutUnlocked_() {
   importerNouveauxFichiersMes_(parameters, master);
     const facts = [];
 
-    const aleasRows = readRecords_(parameters.ID_FICHIER_ALEAS, APP.sourceSheets.aleas);
-    appendFacts_(facts, aleasRows, 'ALEA', APP.aliases.aleas, master, parameters, APP.sourceSheets.aleas);
-    assertAleaConsolidation_(aleasRows, facts);
-
+    // Les remontées aléas production (Waterspiders) ne sont plus consolidées : seules les NC
+    // et les aléas MES alimentent FAITS_IMMO.
     const mesRows = readStagedMes_();
     if (parameters.ID_FICHIER_NC) {
       const ncSpreadsheet = SpreadsheetApp.openById(parameters.ID_FICHIER_NC);
@@ -254,6 +212,7 @@ function actualiserToutUnlocked_() {
     }
     const workflowRows = writeMesPreNc_(mesRows);
     appendStagedMesFacts_(facts, mesRows.filter(row => clean_(row.SOURCE) !== 'NC'), master, parameters);
+    assertFactsConsolidation_(facts);
 
     const deduplicated = deduplicateFacts_(facts);
     const retained = partitionFactsByRetention_(deduplicated, new Date(), 1);
@@ -687,48 +646,6 @@ function searchSourceAnalysisDetails(source, filters, query, requestedLimit) {
   return cacheAnalyticsResponse_(cacheKey, result);
 }
 
-function getDataQualityAuditData(filters) {
-  const requested = Object.assign({}, filters || {});
-  const cacheKey = analyticsCacheKey_('quality-source', requested);
-  const cached = readAnalyticsCache_(cacheKey);
-  if (cached) return cached;
-
-  const parameters = getParameters_();
-  const masterRows = readRecords_(parameters.ID_FICHIER_MASTER, APP.sourceSheets.master);
-  const master = enrichMasterWithDocMartin_(buildMasterIndex_(masterRows), readDocMartinEquipmentRecords_(parameters));
-  const sourceDefinitions = [
-    ['ALEA', 'Aléas production', parameters.ID_FICHIER_ALEAS, APP.sourceSheets.aleas, APP.aliases.aleas],
-    ['NC', 'Non-conformités historiques', parameters.ID_FICHIER_NC, APP.sourceSheets.nc, APP.aliases.nc]
-  ];
-  const sources = sourceDefinitions
-    .filter(([code]) => !requested.source || requested.source === code)
-    .map(([code, label, spreadsheetId, sheetName, aliases]) => {
-      if (!spreadsheetId) return emptySourceQualityAudit_(code, label, sheetName, 'ID de fichier non renseigné.');
-      try {
-        return buildRawSourceQualityAudit_(code, label, sheetName, readRecords_(spreadsheetId, sheetName), master, requested, aliases);
-      } catch (error) {
-        return emptySourceQualityAudit_(code, label, sheetName, error.message || String(error));
-      }
-    });
-  const includeMes = !requested.source || requested.source === 'ALEA_MES' || requested.source === 'NC';
-  const mes = includeMes ? buildMesSourceQualityAudit_(readStagedMes_(), master, requested) : emptyMesSourceQualityAudit_();
-  const result = {
-    version: 'source-quality-v1',
-    refreshedAt: PropertiesService.getScriptProperties().getProperty('LAST_REFRESH') || '',
-    filters: requested,
-    master: {
-      sourceRows: masterRows.length,
-      validImmos: Object.keys(master.byImmo || {}).length,
-      duplicateImmos: Object.keys(master.duplicates || {}).length,
-      invalidImmos: Object.keys(master.invalidImmos || {}).length
-    },
-    sources,
-    mes,
-    imports: buildImportQualityAudit_(SpreadsheetApp.getActive().getSheetByName(APP.sheets.importLog))
-  };
-  return cacheAnalyticsResponse_(cacheKey, result);
-}
-
 function sourceAnalysisOrigin_(source) {
   return {
     sourceSheet: source === 'NC' ? APP.sourceSheets.nc : APP.sourceSheets.aleas,
@@ -737,186 +654,6 @@ function sourceAnalysisOrigin_(source) {
     directSource: source === 'ALEA',
     retentionRule: '24 mois glissants après actualisation'
   };
-}
-
-function createSourceQualityCounter_() {
-  return {
-    rawRows: 0, rawQuantity: 0, retainedRows: 0, retainedFacts: 0, retainedQuantity: 0,
-    retainedWithoutImmo: 0,
-    dateMissing: 0, dateInvalid: 0, immoMissing: 0, immoProvided: 0, immoUnrecognized: 0, familyMissing: 0,
-    commentsMissing: 0, quantityMissing: 0, quantityInvalid: 0,
-    masterMatchedRows: 0, familyResolvedRows: 0, partialRows: 0,
-    exclusions: {}
-  };
-}
-
-function addQualityExclusion_(counter, code, label, quantity) {
-  if (!counter.exclusions[code]) counter.exclusions[code] = { code, label, rows: 0, quantity: 0 };
-  counter.exclusions[code].rows += 1;
-  counter.exclusions[code].quantity += quantity;
-}
-
-function sourceQualityRate_(numerator, denominator) {
-  return { numerator, denominator, percentage: qualityPercentage_(numerator, denominator) };
-}
-
-function finalizeSourceQualityAudit_(code, label, origin, counter, available, error) {
-  const excludedRows = Math.max(0, counter.rawRows - counter.retainedRows);
-  const excludedQuantity = Math.max(0, counter.rawQuantity - counter.retainedQuantity);
-  return {
-    code, label, origin, available, error: error || '',
-    rawRows: counter.rawRows, rawQuantity: counter.rawQuantity,
-    retainedRows: counter.retainedRows, retainedFacts: counter.retainedFacts, retainedQuantity: counter.retainedQuantity,
-    retainedWithoutImmo: counter.retainedWithoutImmo,
-    excludedRows, excludedQuantity,
-    dateMissing: counter.dateMissing, dateInvalid: counter.dateInvalid,
-    immoMissing: counter.immoMissing, immoProvided: counter.immoProvided, immoUnrecognized: counter.immoUnrecognized,
-    familyMissing: counter.familyMissing,
-    commentsMissing: counter.commentsMissing, quantityMissing: counter.quantityMissing, quantityInvalid: counter.quantityInvalid,
-    masterMatchedRows: counter.masterMatchedRows, familyResolvedRows: counter.familyResolvedRows, partialRows: counter.partialRows,
-    rates: {
-      retainedRows: sourceQualityRate_(counter.retainedRows, counter.rawRows),
-      retainedQuantity: sourceQualityRate_(counter.retainedQuantity, counter.rawQuantity),
-      immoProvided: sourceQualityRate_(counter.immoProvided, counter.rawRows),
-      masterMatched: sourceQualityRate_(counter.masterMatchedRows, counter.rawRows),
-      familyResolved: sourceQualityRate_(counter.familyResolvedRows, counter.rawRows),
-      dateComplete: sourceQualityRate_(counter.rawRows - counter.dateMissing - counter.dateInvalid, counter.rawRows)
-    },
-    exclusions: Object.values(counter.exclusions).sort((left, right) => right.rows - left.rows || left.label.localeCompare(right.label))
-  };
-}
-
-function rawRecordFamily_(record, source, master, aliases) {
-  const sourceFamily = clean_(pick_(record, aliases.family));
-  const masterFamily = splitImmos_(pick_(record, aliases.immo))
-    .filter(Boolean)
-    .map(immo => clean_((master.byImmo[immo] || {}).family))
-    .find(Boolean) || '';
-  return source === 'NC' ? sourceFamily || masterFamily : masterFamily || sourceFamily;
-}
-
-function rawRecordMatchesQualityFilters_(record, aliases, filters, master, source) {
-  const requested = filters || {};
-  const family = rawRecordFamily_(record, source, master, aliases);
-  const immos = splitImmos_(pick_(record, aliases.immo)).filter(Boolean);
-  const station = canonicalStation_(clean_(pick_(record, aliases.station)) || sourceMachineName_(record, aliases));
-  if (!filterValuesMatch_([family], requested.family, true)) return false;
-  if (!filterValuesMatch_(immos, requested.immo, true)) return false;
-  if (!stationMatchesFilter_(station, requested.station)) return false;
-  const date = parseDate_(pick_(record, aliases.date));
-  if (requested.from && (!date || date < parseFilterDate_(requested.from, false))) return false;
-  if (requested.to && (!date || date > parseFilterDate_(requested.to, true))) return false;
-  return true;
-}
-
-function sourceQualityQuantity_(record, source, aliases) {
-  const declared = source === 'NC' ? pick_(record, aliases.ncCount) : '';
-  const raw = source === 'NC' && clean_(declared) !== '' ? declared : pick_(record, aliases.quantity);
-  const text = clean_(raw);
-  const parsed = text === '' ? NaN : Number(text.replace(/\s/g, '').replace(',', '.'));
-  return {
-    value: Number.isFinite(parsed) ? Math.max(1, parsed) : 1,
-    missing: text === '',
-    invalid: text !== '' && (!Number.isFinite(parsed) || parsed <= 0)
-  };
-}
-
-function evaluateRawSourceRecord_(source, record, master, aliases) {
-  const immos = splitImmos_(pick_(record, aliases.immo)).filter(Boolean);
-  const sourceSection = clean_(pick_(record, aliases.section));
-  const sourceFamily = clean_(pick_(record, aliases.family));
-  const sourceMachineName = sourceMachineName_(record, aliases);
-  const sourceStation = clean_(pick_(record, aliases.station)) || sourceMachineName;
-  const aleaSourceInScope = source === 'ALEA' && isAleaProductionSourceRowInScope_(sourceSection, sourceStation);
-  const retainedWithoutImmo = aleaSourceInScope && !immos.length
-    || canRetainNcWithoutImmo_(source, immos, sourceFamily, sourceMachineName, sourceStation, sourceSection);
-  const masterEntries = immos.map(immo => ({ immo, data: master.byImmo[immo] || {} }));
-  const eligibleMasterEntries = masterEntries.filter(entry => entry.data.immo
-    && isDrillingMachine_(entry.data)
-    && isInScope_(entry.data.section));
-  const acceptedEntries = eligibleMasterEntries.filter(entry => {
-    if (!isInScope_(sourceSection || entry.data.section || '')) return false;
-    const station = sourceStation || clean_(entry.data.station);
-    return source !== 'ALEA' || isAleaStationInScope_(station);
-  });
-  const acceptedImmos = acceptedEntries.map(entry => entry.immo);
-  const retainedImmos = source === 'ALEA'
-    ? (aleaSourceInScope ? immos : [])
-    : retainedSourceImmos_(source, immos, acceptedImmos, master, sourceSection, sourceStation);
-  let exclusionCode = '';
-  let exclusionLabel = '';
-  if (source === 'ALEA') {
-    if (!clean_(sourceSection) || !isInScope_(sourceSection)) {
-      exclusionCode = 'SECTION_HORS_PERIMETRE';
-      exclusionLabel = 'Section source absente ou hors périmètre TC';
-    } else if (!sourceStation) {
-      exclusionCode = 'POSTE_MANQUANT';
-      exclusionLabel = 'Poste production absent';
-    } else if (!isAleaStationInScope_(sourceStation)) {
-      exclusionCode = 'POSTE_HORS_PERIMETRE';
-      exclusionLabel = 'Poste production hors périmètre TC';
-    }
-  } else if (!immos.length) {
-    if (!retainedWithoutImmo) {
-      exclusionCode = 'IMMO_MANQUANT';
-      exclusionLabel = 'IMMO absent de la ligne source';
-    }
-  } else if (!masterEntries.some(entry => entry.data.immo) && !retainedImmos.length) {
-    exclusionCode = 'IMMO_NON_RECONNU';
-    exclusionLabel = 'IMMO absent du master';
-  } else if (!eligibleMasterEntries.length) {
-    exclusionCode = 'IMMO_HORS_PERIMETRE';
-    exclusionLabel = 'IMMO master hors PA / Perçage';
-  } else if (!isInScope_(sourceSection || eligibleMasterEntries[0].data.section || '')) {
-    exclusionCode = 'SECTION_HORS_PERIMETRE';
-    exclusionLabel = 'Section source hors périmètre TC';
-  }
-  return {
-    immos, acceptedImmos, retainedImmos,
-    immoUnrecognized: immos.some(immo => !master.byImmo[immo]),
-    retainedWithoutImmo,
-    machineName: sourceMachineName || sourceStation,
-    masterMatched: eligibleMasterEntries.length > 0,
-    familyResolved: Boolean(clean_(pick_(record, aliases.family)) || acceptedEntries.some(entry => clean_(entry.data.family))),
-    partial: Boolean(acceptedEntries.length && acceptedEntries.length < immos.length),
-    exclusionCode, exclusionLabel
-  };
-}
-
-function buildRawSourceQualityAudit_(source, label, origin, records, master, filters, aliases) {
-  const counter = createSourceQualityCounter_();
-  (records || []).filter(record => rawRecordMatchesQualityFilters_(record, aliases, filters, master, source)).forEach(record => {
-    const quantity = sourceQualityQuantity_(record, source, aliases);
-    const dateValue = pick_(record, aliases.date);
-    const date = parseDate_(dateValue);
-    const comment = clean_(pick_(record, aliases.comment));
-    const evaluation = evaluateRawSourceRecord_(source, record, master, aliases);
-    counter.rawRows += 1;
-    counter.rawQuantity += quantity.value;
-    if (!clean_(dateValue)) counter.dateMissing += 1;
-    else if (!date) counter.dateInvalid += 1;
-    if (!evaluation.immos.length) counter.immoMissing += 1;
-    else {
-      counter.immoProvided += 1;
-      if (evaluation.immoUnrecognized) counter.immoUnrecognized += 1;
-    }
-    if (!clean_(pick_(record, aliases.family))) counter.familyMissing += 1;
-    if (!comment) counter.commentsMissing += 1;
-    if (quantity.missing) counter.quantityMissing += 1;
-    if (quantity.invalid) counter.quantityInvalid += 1;
-    if (evaluation.masterMatched) counter.masterMatchedRows += 1;
-    if (evaluation.familyResolved) counter.familyResolvedRows += 1;
-    if (evaluation.partial) counter.partialRows += 1;
-    if (evaluation.retainedImmos.length || evaluation.retainedWithoutImmo) {
-      counter.retainedRows += 1;
-      counter.retainedFacts += evaluation.retainedImmos.length || 1;
-      counter.retainedQuantity += quantity.value;
-      if (evaluation.retainedWithoutImmo) counter.retainedWithoutImmo += 1;
-    } else {
-      addQualityExclusion_(counter, evaluation.exclusionCode || 'REGLE_CONSOLIDATION', evaluation.exclusionLabel || 'Règle de consolidation', quantity.value);
-    }
-  });
-  return finalizeSourceQualityAudit_(source, label, origin, counter, true, '');
 }
 
 function mesQualityRowMatchesFilters_(row, filters, family, immos) {
@@ -955,121 +692,6 @@ function buildMesEvidenceQuality_(rows, filters, problemFilter) {
   return result;
 }
 
-function buildMesSourceQualityAudit_(rows, master, filters) {
-  const counters = { ALEA_MES: createSourceQualityCounter_(), NC: createSourceQualityCounter_() };
-  const methods = { ALEA_MES: {}, NC: {} };
-  const statusCounts = {};
-  (rows || []).forEach(row => {
-    const source = clean_(row.SOURCE) === 'NC' ? 'NC' : 'ALEA_MES';
-    if (filters && filters.source && filters.source !== source) return;
-    const identity = resolveMesIdentity_(row.IMMO || row.IMMO_SOURCE, row.FAMILLE, row.COMMENTAIRE_INITIAL, master);
-    const immos = identity.immos.length ? identity.immos : [];
-    const family = clean_(row.FAMILLE) || identity.family;
-    if (!mesQualityRowMatchesFilters_(row, filters, family, immos)) return;
-    const counter = counters[source];
-    const quantityValue = source === 'NC' ? Math.max(1, numberOr_(row.NB_NC, row.QUANTITE)) : Math.max(1, numberOr_(row.QUANTITE, 1));
-    const rawQuantity = source === 'NC' ? row.NB_NC : row.QUANTITE;
-    const rawQuantityText = clean_(rawQuantity);
-    const parsedQuantity = rawQuantityText === '' ? NaN : Number(rawQuantityText.replace(/\s/g, '').replace(',', '.'));
-    const dateValue = row.DATE;
-    const date = parseDate_(dateValue);
-    const comment = clean_(row.COMMENTAIRE_INITIAL);
-    const masterImmos = immos.filter(immo => {
-      const data = master.byImmo[immo] || {};
-      return data.immo && isDrillingMachine_(data) && isInScope_(data.section);
-    });
-    const sourceSection = clean_(row.SECTION);
-    const acceptedImmos = masterImmos.filter(immo => {
-      const data = master.byImmo[immo] || {};
-      return isInScope_(sourceSection || data.section || '');
-    });
-    const status = clean_(row.STATUT_WORKFLOW) || 'NON_APPLICABLE';
-    const method = clean_(row.METHODE_RAPPROCHEMENT) || identity.method || 'NON_RENSEIGNE';
-    statusCounts[status] = (statusCounts[status] || 0) + 1;
-    methods[source][method] = (methods[source][method] || 0) + 1;
-    counter.rawRows += 1;
-    counter.rawQuantity += quantityValue;
-    if (!clean_(dateValue)) counter.dateMissing += 1;
-    else if (!date) counter.dateInvalid += 1;
-    const immoProvided = !isMissingMesImmo_(row.IMMO_SOURCE) || isMesIdentityImmoMethod_(method);
-    const familyProvided = Boolean(clean_(row.FAMILLE_SOURCE)) || /^FAMILLE_/.test(method);
-    if (immoProvided) counter.immoProvided += 1;
-    else counter.immoMissing += 1;
-    if (immoProvided && !masterImmos.length) counter.immoUnrecognized += 1;
-    if (!familyProvided) counter.familyMissing += 1;
-    if (!comment) counter.commentsMissing += 1;
-    if (!rawQuantityText) counter.quantityMissing += 1;
-    else if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) counter.quantityInvalid += 1;
-    if (masterImmos.length) counter.masterMatchedRows += 1;
-    if (familyProvided) counter.familyResolvedRows += 1;
-    const excludedByComment = source === 'ALEA_MES' && isExcludedMesSourceComment_(comment);
-    const workflowPending = source === 'NC' && status !== 'VALIDEE';
-    let exclusionCode = '';
-    let exclusionLabel = '';
-    if (excludedByComment) {
-      exclusionCode = 'COMMENTAIRE_SOURCE_EXCLU';
-      exclusionLabel = 'Commentaire MES identifié comme BOX / VPC';
-    } else if (workflowPending) {
-      exclusionCode = 'NC_NON_VALIDEE';
-      exclusionLabel = 'NC MES en attente de validation Qualité';
-    } else if (!masterImmos.length) {
-      exclusionCode = /^.*A_VERIFIER$/.test(identity.method) ? 'RAPPROCHEMENT_AMBIGU' : 'IMMO_NON_RECONNU';
-      exclusionLabel = /^.*A_VERIFIER$/.test(identity.method) ? 'Rapprochement MES ambigu ou à vérifier' : 'IMMO/famille MES non rapproché au master';
-    } else if (!acceptedImmos.length) {
-      exclusionCode = 'SECTION_HORS_PERIMETRE';
-      exclusionLabel = 'Section MES hors périmètre TC';
-    }
-    if (acceptedImmos.length && !excludedByComment && !workflowPending) {
-      counter.retainedRows += 1;
-      counter.retainedFacts += acceptedImmos.length;
-      counter.retainedQuantity += quantityValue;
-    } else {
-      addQualityExclusion_(counter, exclusionCode || 'REGLE_CONSOLIDATION', exclusionLabel || 'Règle de consolidation MES', quantityValue);
-    }
-  });
-  const bySource = Object.keys(counters).map(source => finalizeSourceQualityAudit_(
-    source,
-    source === 'NC' ? 'NC MES en préparation' : 'Aléas MES staging',
-    'STG_MES',
-    counters[source],
-    true,
-    ''
-  ));
-  return {
-    stagingRows: bySource.reduce((sum, item) => sum + item.rawRows, 0),
-    stagingQuantity: bySource.reduce((sum, item) => sum + item.rawQuantity, 0),
-    bySource,
-    statusCounts,
-    methods: Object.entries(methods.ALEA_MES).map(([method, rows]) => ({ method, rows })).sort((left, right) => right.rows - left.rows),
-    note: 'Les NC MES restent une préparation humaine ; les NC analytiques proviennent de Données NC TC.'
-  };
-}
-
-function emptySourceQualityAudit_(code, label, origin, error) {
-  return finalizeSourceQualityAudit_(code, label, origin, createSourceQualityCounter_(), false, error);
-}
-
-function emptyMesSourceQualityAudit_() {
-  return { stagingRows: 0, stagingQuantity: 0, bySource: [], statusCounts: {}, methods: [], note: '' };
-}
-
-function buildImportQualityAudit_(sheet) {
-  if (!sheet || sheet.getLastRow() < 2) return { rows: 0, statuses: {}, errors: [] };
-  const values = sheet.getDataRange().getDisplayValues();
-  const headers = values.shift().map(normalizeHeader_);
-  const statusIndex = headers.indexOf('STATUT');
-  const fileIndex = headers.indexOf('NOMFICHIER');
-  const messageIndex = headers.indexOf('MESSAGE');
-  const statuses = {};
-  const errors = [];
-  values.filter(row => row.some(value => clean_(value) !== '')).forEach(row => {
-    const status = clean_(row[statusIndex]) || 'NON_RENSEIGNE';
-    statuses[status] = (statuses[status] || 0) + 1;
-    if (normalizeHeader_(status) === 'ERREUR') errors.push({ file: clean_(row[fileIndex]), message: clean_(row[messageIndex]) });
-  });
-  return { rows: values.length, statuses, errors: errors.slice(-20) };
-}
-
 function getSourceAnalysisData(source, filters, publishedOnly) {
   // Seule l'analyse NC reste exposée : la page « Analyses Aléas » a été retirée.
   if (source !== 'NC') throw new Error('Analyse source non prise en charge.');
@@ -1103,259 +725,9 @@ function getSourceAnalysisData(source, filters, publishedOnly) {
   return cacheAnalyticsResponse_(cacheKey, result);
 }
 
-function getCombinedAleaAnalysisData(filters) {
-  const requested = Object.assign({}, filters || {});
-  delete requested.source;
-  const cacheKey = analyticsCacheKey_('combined-alea', requested);
-  const cached = readAnalyticsCache_(cacheKey);
-  if (cached) return cached;
-  const factData = readFactsForAnalysis_(requested);
-  if (!factData.values.length) {
-    return cacheAnalyticsResponse_(cacheKey, emptyCombinedAleaAnalysis_('Aucune donnée consolidée. Lancez « Actualiser toutes les données ».'));
-  }
-  const values = factData.values;
-  const headers = factData.headers;
-  const index = Object.fromEntries(headers.map((header, position) => [header, position]));
-  let master = null;
-  try {
-    const parameters = getParameters_();
-    master = buildMasterIndex_(readRecords_(parameters.ID_FICHIER_MASTER, APP.sourceSheets.master));
-  } catch (error) {
-    master = null;
-  }
-  const data = buildCombinedAleaAnalysis_(values, index, requested, master);
-  const properties = PropertiesService.getScriptProperties().getProperties();
-  return cacheAnalyticsResponse_(cacheKey, Object.assign(data, {
-    refreshedAt: properties.LAST_REFRESH || '',
-    options: collectFilterOptions_(values, index),
-    schema: (() => {
-      const status = factsSchemaStatus_(factData.schemaHeaders);
-      return Object.assign(status, { needsRefresh: status.needsRefresh || properties.FACTS_SCHEMA_REBUILD_REQUIRED === 'OUI' });
-    })()
-  }));
-}
-
-function emptyCombinedAleaAnalysis_(message) {
-  return {
-    source: 'COMBINED_ALEA', empty: true, message, detailsTotal: 0, detailsLimit: 200, rows: [],
-    kpis: {
-      productionEvents: 0, mesEvents: 0, productionHours: 0, mesHours: 0,
-      matchedEvents: 0, strongMatches: 0, probableMatches: 0, reviewMatches: 0,
-      unmatchedProduction: 0, unmatchedMes: 0
-    }
-  };
-}
-
-function buildCombinedAleaAnalysis_(values, index, filters, master) {
-  const requested = Object.assign({}, filters || {});
-  delete requested.source;
-  const rows = values.filter(row => ['ALEA', 'ALEA_MES'].includes(clean_(row[index.SOURCE]))
-    && !(clean_(row[index.SOURCE]) === 'ALEA_MES' && isExcludedCombinedMesComment_(row[index.COMMENTAIRE]))
-    && matchesFilters_(row, index, requested));
-  const production = rows.filter(row => clean_(row[index.SOURCE]) === 'ALEA')
-    .map(row => combinedAleaDetailRow_(row, index, 'ALEA', master));
-  const mes = rows.filter(row => clean_(row[index.SOURCE]) === 'ALEA_MES')
-    .map(row => combinedAleaDetailRow_(row, index, 'ALEA_MES', master));
-  const comparisons = matchCombinedAleaRows_(production, mes);
-  const productionHours = production.reduce((sum, row) => sum + row.downtime, 0);
-  const mesHours = mes.reduce((sum, row) => sum + row.downtime, 0);
-  const matched = comparisons.filter(row => row.correspondence.label !== 'Aucune');
-  const strongMatches = matched.filter(row => row.correspondence.label === 'Forte').length;
-  const probableMatches = matched.filter(row => row.correspondence.label === 'Probable').length;
-  const reviewMatches = matched.filter(row => row.correspondence.label === 'À vérifier').length;
-  const sorted = comparisons.slice().sort((left, right) => {
-    const rank = { Forte: 3, Probable: 2, 'À vérifier': 1, Aucune: 0 };
-    return (rank[right.correspondence.label] || 0) - (rank[left.correspondence.label] || 0)
-      || dateSortValue_(right.date) - dateSortValue_(left.date);
-  });
-  return {
-    source: 'COMBINED_ALEA',
-    empty: !production.length && !mes.length,
-    message: !production.length && !mes.length ? 'Aucun aléa production ou MES pour ces filtres.' : '',
-    kpis: {
-      productionEvents: production.length,
-      mesEvents: mes.length,
-      productionHours,
-      mesHours,
-      matchedEvents: matched.length,
-      strongMatches,
-      probableMatches,
-      reviewMatches,
-      unmatchedProduction: sorted.filter(row => row.production && !row.mes).length,
-      unmatchedMes: sorted.filter(row => row.mes && !row.production).length
-    },
-    detailsTotal: sorted.length,
-    detailsLimit: 200,
-    rows: sorted.slice(0, 200)
-  };
-}
-
-function combinedAleaDetailRow_(row, index, source, master) {
-  const problem = clean_(row[index.PROBLEME]) || clean_(row[index.CATEGORIE]);
-  const immo = clean_(row[index.IMMO]);
-  const family = clean_(row[index.FAMILLE]);
-  const comment = clean_(row[index.COMMENTAIRE]);
-  const commentIdentity = source === 'ALEA_MES' && master
-    ? resolveMesIdentity_('', family, comment, master)
-    : { immos: [], family: '', method: '' };
-  const immos = [...new Set([immo, ...commentIdentity.immos].map(normalizeImmo_).filter(Boolean))];
-  const detail = {
-    id: `${source}|${clean_(row[index.ID_EVENEMENT])}`,
-    date: sourceAnalysisDateKey_(row[index.DATE]),
-    station: canonicalStation_(row[index.POSTE]),
-    immo: immo || immos.join(' / '),
-    immos,
-    family: family || commentIdentity.family || (master && immos.length === 1 ? clean_((master.byImmo[immos[0]] || {}).family) : ''),
-    problem,
-    category: clean_(row[index.CATEGORIE]),
-    comment,
-    identityMethod: commentIdentity.method,
-    quantity: numberOr_(row[index.QUANTITE], 1),
-    downtime: numberOr_(row[index.TEMPS_PERDU_HEURES], 0)
-  };
-  detail.keywords = combinedAleaKeywords_([detail.problem, detail.category, detail.comment].join(' '));
-  return detail;
-}
-
-function matchCombinedAleaRows_(production, mes) {
-  const productionByDay = new Map();
-  production.forEach(row => {
-    const day = row.date;
-    if (!day) return;
-    if (!productionByDay.has(day)) productionByDay.set(day, []);
-    productionByDay.get(day).push(row);
-  });
-  const candidates = [];
-  mes.forEach(mesRow => {
-    const mesDate = parseDate_(mesRow.date);
-    if (!mesDate) return;
-    for (let offset = -1; offset <= 1; offset += 1) {
-      const candidateDate = new Date(mesDate.getTime() + offset * 86400000);
-      const day = dateKey_(candidateDate);
-      (productionByDay.get(day) || []).forEach(productionRow => {
-        const candidate = combinedAleaMatch_(productionRow, mesRow);
-        if (candidate) candidates.push(candidate);
-      });
-    }
-  });
-  candidates.sort((left, right) => right.score - left.score
-    || left.dateGap - right.dateGap
-    || left.mes.id.localeCompare(right.mes.id, 'fr', { numeric: true, sensitivity: 'base' })
-    || left.production.id.localeCompare(right.production.id, 'fr', { numeric: true, sensitivity: 'base' }));
-  const matchedProduction = new Set();
-  const matchedMes = new Set();
-  const selected = [];
-  candidates.forEach(candidate => {
-    if (matchedProduction.has(candidate.production.id) || matchedMes.has(candidate.mes.id)) return;
-    matchedProduction.add(candidate.production.id);
-    matchedMes.add(candidate.mes.id);
-    selected.push(candidate);
-  });
-  const byProduction = new Map(selected.map(candidate => [candidate.production.id, candidate]));
-  const byMes = new Map(selected.map(candidate => [candidate.mes.id, candidate]));
-  const comparisons = [];
-  production.forEach(row => {
-    const candidate = byProduction.get(row.id);
-    comparisons.push(combinedAleaComparisonRow_(candidate ? candidate.production : row, candidate ? candidate.mes : null, candidate));
-  });
-  mes.forEach(row => {
-    if (!byMes.has(row.id)) comparisons.push(combinedAleaComparisonRow_(null, row, null));
-  });
-  return comparisons;
-}
-
-function combinedAleaMatch_(production, mes) {
-  const productionDate = parseDate_(production.date);
-  const mesDate = parseDate_(mes.date);
-  if (!productionDate || !mesDate) return null;
-  const dateGap = Math.round(Math.abs(productionDate.getTime() - mesDate.getTime()) / 86400000);
-  if (dateGap > 1) return null;
-  const productionImmos = production.immos && production.immos.length
-    ? production.immos
-    : [normalizeImmo_(production.immo)].filter(Boolean);
-  const mesImmos = mes.immos && mes.immos.length
-    ? mes.immos
-    : [normalizeImmo_(mes.immo)].filter(Boolean);
-  const sharedImmos = productionImmos.filter(immo => mesImmos.includes(immo));
-  const sameImmo = sharedImmos.length > 0;
-  const productionStation = combinedAleaStationKey_(production.station);
-  const mesStation = combinedAleaStationKey_(mes.station);
-  const sameStation = Boolean(productionStation && mesStation && productionStation === mesStation);
-  const sameFamily = Boolean(production.family && mes.family
-    && identityKey_(production.family) === identityKey_(mes.family));
-  const sharedKeywords = (production.keywords || []).filter(keyword => (mes.keywords || []).includes(keyword));
-  if (!sameImmo && !sameStation && !sameFamily && !sharedKeywords.length) return null;
-  let score = dateGap === 0 ? 30 : 15;
-  const reasons = [dateGap === 0 ? 'date identique' : 'date à ±1 jour'];
-  if (sameImmo) {
-    score += 40;
-    reasons.push('IMMO identique');
-    if (/^IMMO_SOURCE/.test(mes.identityMethod)) reasons.push(`IMMO renseigné dans la source MES : ${sharedImmos.join(', ')}`);
-    if (mes.identityMethod === 'IMMO_COMMENTAIRE_EXACT') reasons.push(`IMMO exact trouvé dans le commentaire MES : ${sharedImmos.join(', ')}`);
-    if (mes.identityMethod === 'IMMO_COMMENTAIRE_CORRIGE') reasons.push(`IMMO corrigé depuis le commentaire MES : ${sharedImmos.join(', ')}`);
-  }
-  if (sameStation) { score += 20; reasons.push('poste identique'); }
-  if (sameFamily) { score += 25; reasons.push('famille machine identique'); }
-  if (sharedKeywords.length) { score += Math.min(20, sharedKeywords.length * 10); reasons.push(`mots-clés : ${sharedKeywords.slice(0, 3).join(', ')}`); }
-  score = Math.min(100, score);
-  const label = score >= 80 ? 'Forte' : score >= 55 ? 'Probable' : 'À vérifier';
-  return { production, mes, score, dateGap, label, reasons };
-}
-
-function isExcludedCombinedMesComment_(comment) {
-  const normalized = normalizeHeader_(comment);
-  return normalized.includes('GRILLE') || isExcludedMesSourceComment_(comment);
-}
-
 function isExcludedMesSourceComment_(comment) {
   const normalized = normalizeHeader_(comment);
   return normalized.includes('BOX') || normalized.includes('VPC');
-}
-
-function combinedAleaComparisonRow_(production, mes, candidate) {
-  const date = (mes && mes.date) || (production && production.date) || '';
-  const displayImmo = candidate && candidate.production
-    ? candidate.production.immo || (mes && mes.immo) || ''
-    : (mes && mes.immo) || (production && production.immo) || '';
-  return {
-    date,
-    station: (mes && mes.station) || (production && production.station) || '',
-    immo: displayImmo,
-    production: production ? {
-      problem: production.problem, comment: production.comment, downtime: production.downtime, quantity: production.quantity
-    } : null,
-    mes: mes ? {
-      problem: mes.problem, comment: mes.comment, downtime: mes.downtime, quantity: mes.quantity
-    } : null,
-    correspondence: candidate
-      ? { label: candidate.label, score: candidate.score, reasons: candidate.reasons }
-      : { label: 'Aucune', score: 0, reasons: [] }
-  };
-}
-
-function combinedAleaStationKey_(value) {
-  const normalized = normalizeHeader_(value);
-  const match = normalized.match(/P?(280|290)/);
-  return match ? `P${match[1]}` : normalized;
-}
-
-function combinedAleaKeywords_(value) {
-  const keywords = tokenizeComment_(value).map(token => {
-    if (/^(CAS|ENDOMMAGE|ABIME|INUTILISABLE)/.test(token)) return 'CASSE';
-    if (/^(MANQU|ABSENT|NONDISPONIBLE|INDISPONIBLE)/.test(token)) return 'MANQUANT';
-    if (/^(BLOQU|DEBOUCH|NONDEBOUCHANT)/.test(token)) return 'BLOCAGE';
-    if (/^(FRAISUR|HT$)/.test(token)) return 'FRAISURAGE';
-    if (/^(ASPIR)/.test(token)) return 'ASPIRATION';
-    if (/^(CLAMP)/.test(token)) return 'CLAMPAGE';
-    if (/^(OUTIL|FORET|PERCEUSE)/.test(token)) return 'OUTIL';
-    if (/^(PERC)/.test(token)) return 'PERCAGE';
-    if (/^(LUBR)/.test(token)) return 'LUBRIFICATION';
-    if (/^(AFFICH)/.test(token)) return 'AFFICHAGE';
-    if (/^(ELECTR)/.test(token)) return 'ELECTRICITE';
-    if (/^(NONCONFORM)/.test(token)) return 'NON_CONFORMITE';
-    return '';
-  }).filter(Boolean);
-  return [...new Set(keywords)];
 }
 
 function archiverFactsHistoriques() {
@@ -1660,14 +1032,6 @@ function mftActionsHeaders_() {
   ];
 }
 
-function getMftAgenda() {
-  return getNormalizedMftAgenda_();
-}
-
-function getOfficialMftPlan_() {
-  return getNormalizedOfficialMftPlan_();
-}
-
 function findLatestMftSheet_(spreadsheet) {
   const datePattern = /(\d{2})[ _./-]?(\d{2})[ _./-]?(\d{4})/;
   const candidates = spreadsheet.getSheets().map(sheet => {
@@ -1743,27 +1107,6 @@ function extractMftMetadata_(values, headerRow) {
   return { participants, nextMeeting, statusCounts };
 }
 
-
-function sortMftActions_(left, right) {
-  const openLeft = left.statut !== 'Fait' && left.statut !== 'Abandonné';
-  const openRight = right.statut !== 'Fait' && right.statut !== 'Abandonné';
-  if (openLeft !== openRight) return openLeft ? -1 : 1;
-  return dateSortValue_(left.echeance) - dateSortValue_(right.echeance);
-}
-
-function saveMftAction(action) {
-  requireSpreadsheetEditor_('saveMftAction');
-  return saveOfficialMftAction_(action);
-}
-
-function deleteMftAction(id) {
-  requireSpreadsheetEditor_('deleteMftAction');
-  return abandonOfficialMftAction_(id);
-}
-
-function readMftActions_() {
-  return readNormalizedMftActions_();
-}
 
 function ensureMftActionsSchema_(sheet) {
   const expected = mftActionsHeaders_();
@@ -1847,15 +1190,13 @@ function appendFacts_(target, records, source, aliases, master, parameters, sour
   });
 }
 
-function assertAleaConsolidation_(sourceRows, facts) {
-  if (!(sourceRows || []).length) {
-    throw new Error(`La feuille « ${APP.sourceSheets.aleas} » ne contient aucune ligne de données.`);
+// Garde-fou : ne jamais remplacer FAITS_IMMO par une table vide (source NC ou MES illisible).
+function assertFactsConsolidation_(facts) {
+  const count = (facts || []).length;
+  if (!count) {
+    throw new Error('Aucun fait NC ou MES consolidé. Actualisation interrompue pour préserver FAITS_IMMO ; contrôlez la source NC et STG_MES.');
   }
-  const retained = (facts || []).filter(row => clean_(row[3]) === 'ALEA').length;
-  if (!retained) {
-    throw new Error('Aucun aléa production TC n’a été consolidé. Actualisation interrompue pour préserver FAITS_IMMO ; contrôlez les colonnes IMMO, Section, Poste et le master.');
-  }
-  return retained;
+  return count;
 }
 
 function appendStagedMesFacts_(target, rows, master, parameters) {
@@ -2063,6 +1404,12 @@ function mergeAnalysisFactRows_(activeRows, archivedRows) {
 }
 
 function readFactsForAnalysis_(filters) {
+  const result = readFactsForAnalysisIncludingProduction_(filters);
+  const sourceIndex = APP.factsHeaders.indexOf('SOURCE');
+  return Object.assign(result, { values: result.values.filter(row => clean_(row[sourceIndex]) !== 'ALEA') });
+}
+
+function readFactsForAnalysisIncludingProduction_(filters) {
   const spreadsheet = SpreadsheetApp.getActive();
   const activeSheet = getActiveFactsSheet_(spreadsheet);
   let schemaHeaders = APP.factsHeaders.slice();
@@ -2309,7 +1656,6 @@ function migrateSecureParameters_(current, spreadsheet) {
       return;
     }
     if (key === 'ID_FICHIER_MASTER' && findSourceSheet_(spreadsheet, APP.sourceSheets.master)) updates[key] = spreadsheet.getId();
-    if (key === 'ID_FICHIER_ALEAS' && findSourceSheet_(spreadsheet, APP.sourceSheets.aleas)) updates[key] = spreadsheet.getId();
     if (key === 'ID_FICHIER_NC' && findSourceSheet_(spreadsheet, APP.sourceSheets.nc)) updates[key] = spreadsheet.getId();
   });
   if (Object.keys(updates).length) properties.setProperties(updates);
@@ -2322,12 +1668,12 @@ function synchroniserSourcesConnues() {
     const masterId = clean_(current.ID_FICHIER_MASTER);
     const mftId = clean_(current.ID_FICHIER_PLAN_ACTIONS_MFT);
     const properties = PropertiesService.getScriptProperties();
-    const keys = ['ID_FICHIER_ALEAS', 'ID_FICHIER_NC', 'ID_FICHIER_PLANNING_MSN', 'ID_FICHIER_TAUX_PERCAGE', 'ID_FICHIER_DOC_MARTIN'];
+    const keys = ['ID_FICHIER_NC', 'ID_FICHIER_PLANNING_MSN', 'ID_FICHIER_TAUX_PERCAGE', 'ID_FICHIER_DOC_MARTIN'];
     const ids = Object.fromEntries(keys.map(key => [key, APP.parameterDefaults[key]]));
     properties.setProperties(ids);
     properties.setProperty('ANALYTICS_CACHE_VERSION', new Date().toISOString());
     SpreadsheetApp.getActive().toast(
-      `5 sources synchronisées. Master : ${masterId ? `…${masterId.slice(-8)}` : 'absent'} ; MFT : ${mftId ? `…${mftId.slice(-8)}` : 'absent'}.`,
+      `${keys.length} sources synchronisées. Master : ${masterId ? `…${masterId.slice(-8)}` : 'absent'} ; MFT : ${mftId ? `…${mftId.slice(-8)}` : 'absent'}.`,
       'Dashboard Machine', 12
     );
     return { ...ids, ID_FICHIER_MASTER: masterId, ID_FICHIER_PLAN_ACTIONS_MFT: mftId };
@@ -2392,7 +1738,7 @@ function publishFactsSheet_(spreadsheet, nextSheet) {
 }
 
 function validateCoreParameters_(parameters) {
-  ['ID_FICHIER_MASTER', 'ID_FICHIER_ALEAS'].forEach(key => {
+  ['ID_FICHIER_MASTER'].forEach(key => {
     if (!parameters[key]) throw new Error(`Paramètre obligatoire non renseigné : ${key}`);
   });
 }
@@ -2677,18 +2023,6 @@ function resolveCommentImmo_(tokens, master) {
   return { immo: [...correctedMatches][0], method: 'IMMO_COMMENTAIRE_CORRIGE' };
 }
 
-function identityMatchesInScope_(tokens, master) {
-  return [...new Set(tokens.flatMap(token => {
-    const candidates = master.identityOwners && master.identityOwners[token]
-      ? master.identityOwners[token]
-      : master.byImmoKey[token] ? [master.byImmoKey[token]] : [];
-    return candidates;
-  }).filter(immo => {
-    const data = immo ? master.byImmo[immo] : null;
-    return data && isInScope_(data.section) && isDrillingMachine_(data);
-  }))];
-}
-
 function sourceImmoMatchesInScope_(tokens, master) {
   return [...new Set(tokens.map(token => master.byImmoKey[token]).filter(immo => {
     const data = immo ? master.byImmo[immo] : null;
@@ -2757,22 +2091,6 @@ function resolveMasterFamily_(familyValue, master) {
 
 function identityKey_(value) {
   return normalizeHeader_(value);
-}
-
-function longestCommonSubstringLength_(left, right) {
-  let best = 0;
-  let previous = new Array(right.length + 1).fill(0);
-  for (let leftIndex = 1; leftIndex <= left.length; leftIndex += 1) {
-    const current = new Array(right.length + 1).fill(0);
-    for (let rightIndex = 1; rightIndex <= right.length; rightIndex += 1) {
-      if (left[leftIndex - 1] === right[rightIndex - 1]) {
-        current[rightIndex] = previous[rightIndex - 1] + 1;
-        best = Math.max(best, current[rightIndex]);
-      }
-    }
-    previous = current;
-  }
-  return best;
 }
 
 function normalizeQlikProblem_(problem, isQlik) {
@@ -3322,10 +2640,6 @@ function readTcActionPlanActions_(spreadsheet, master) {
   })).filter(item => item.action && (item.immo || item.family));
 }
 
-function findLatestTcActionPlanSheet_(spreadsheet) {
-  return listTcActionPlanSheets_(spreadsheet)[0] || null;
-}
-
 function listTcActionPlanSheets_(spreadsheet) {
   const datePattern = /(\d{2})[ _./-]?(\d{2})[ _./-]?(\d{4})/;
   const candidates = spreadsheet.getSheets().map(sheet => {
@@ -3649,48 +2963,8 @@ function topCostAggregates_(values, limit) {
     .slice(0, limit);
 }
 
-function emptyQualityCounter_() {
-  return { total: 0, identified: 0, masterMatched: 0, familyMatched: 0, commentsPresent: 0, downtimePresent: 0 };
-}
-
-function createQualityCounters_() {
-  return { ALEA: emptyQualityCounter_(), NC: emptyQualityCounter_(), ALEA_MES: emptyQualityCounter_() };
-}
-
 function qualityPercentage_(numerator, denominator) {
   return denominator ? Math.round(numerator * 1000 / denominator) / 10 : 0;
-}
-
-function buildQualityAudit_(qualityBySource, mesMatchMethods) {
-  const labels = { ALEA: 'Aléas production', NC: 'Non-conformités', ALEA_MES: 'Aléas MES' };
-  const sources = ['ALEA', 'NC', 'ALEA_MES'].map(code => {
-    const counters = qualityBySource[code] || emptyQualityCounter_();
-    return {
-      code,
-      label: labels[code],
-      ...counters,
-      identifiedCoverage: qualityPercentage_(counters.identified, counters.total),
-      masterCoverage: qualityPercentage_(counters.masterMatched, counters.total),
-      familyCoverage: qualityPercentage_(counters.familyMatched, counters.total),
-      commentCoverage: qualityPercentage_(counters.commentsPresent, counters.total),
-      downtimeCoverage: qualityPercentage_(counters.downtimePresent, counters.total)
-    };
-  });
-  const mes = sources.find(item => item.code === 'ALEA_MES') || { total: 0 };
-  return {
-    sources,
-    mes: {
-      total: mes.total,
-      commentsPresent: mes.commentsPresent || 0,
-      identified: mes.identified || 0,
-      masterMatched: mes.masterMatched || 0,
-      familyMatched: mes.familyMatched || 0,
-      downtimePresent: mes.downtimePresent || 0,
-      methods: Object.entries(mesMatchMethods)
-        .map(([method, count]) => ({ method, count }))
-        .sort((left, right) => right.count - left.count)
-    }
-  };
 }
 
 function buildDashboardDefinitions_(impactWeights) {

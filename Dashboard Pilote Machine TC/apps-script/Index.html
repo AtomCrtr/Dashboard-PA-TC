@@ -24,7 +24,6 @@
       --cyan: #79b9d2;
       --radius: 12px;
     }
-
     * { box-sizing: border-box; }
     [hidden] { display: none !important; }
     .skip-link {
@@ -48,7 +47,6 @@
       background: var(--canvas);
       font-family: "IBM Plex Sans", sans-serif;
     }
-
     button, input, select { font: inherit; }
     button, a, input, select { touch-action: manipulation; }
     button { cursor: pointer; }
@@ -88,8 +86,7 @@
     .view-switch { display: flex; gap: 4px; background: var(--canvas); border-radius: 10px; padding: 4px; }
     .view-switch button { min-height: 44px; border: 0; background: transparent; color: var(--muted); font-size: 13px; font-weight: 600; padding: 7px 16px; border-radius: 8px; }
     .view-switch button.active { background: var(--surface); color: var(--ink); box-shadow: 0 1px 4px rgba(18,24,32,.08); }
-    .view-switch button:active, .primary:active, .secondary:active, .mes-link:active, .mes-import:active, .ranking-toggle:active, .history-button:active { transform: scale(.97); }
-
+    .view-switch button:active, .primary:active, .secondary:active, .mes-link:active, .mes-import:active, .history-button:active { transform: scale(.97); }
     .workspace { display: grid; grid-template-columns: 284px minmax(0, 1fr); min-height: 0; transition: grid-template-columns .24s ease; }
     .filters {
       width: 284px;
@@ -208,7 +205,6 @@
     .mes-link[aria-disabled="true"] { opacity: .45; pointer-events: none; }
     .mes-import { border: 1px solid var(--line); background: #fff; color: var(--ink); }
     .mes-import svg { width: 16px; }
-
     main { min-width: 0; padding: 24px; overflow: hidden; }
     .section-heading { display: flex; justify-content: space-between; align-items: end; margin-bottom: 14px; }
     .section-heading p { margin: 3px 0 0; color: var(--muted); font-size: 13px; }
@@ -231,7 +227,6 @@
     .kpi-label { color: var(--muted); font-size: 12px; font-weight: 600; text-transform: uppercase; }
     .kpi-value { margin-top: 8px; font: 700 24px Manrope, sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .kpi-note { color: var(--muted); font-size: 11px; margin-top: 3px; }
-
     .dashboard-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
     .panel {
       position: relative;
@@ -260,43 +255,14 @@
     .panel.wide { grid-column: 1 / -1; }
     .panel-title { margin: 0 0 4px; font: 700 14px Manrope, sans-serif; }
     .panel-subtitle { margin: 0; color: var(--muted); font-size: 12px; }
-    .definition-box { margin-top: 12px; padding: 12px 14px; border-left: 4px solid var(--cyan); border-radius: 8px; background: #edf6fa; color: #365066; font-size: 12px; line-height: 1.5; }
-    .definition-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; }
-    .definition-grid strong { display: block; color: var(--ink); margin-bottom: 2px; }
-    .audit-table { width: 100%; margin-top: 12px; border-collapse: collapse; font-size: 12px; }
-    .audit-table th, .audit-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
-    .audit-table th:first-child, .audit-table td:first-child { text-align: left; }
-    .audit-table th { color: var(--muted); font-weight: 600; }
-    .audit-scroll { overflow-x: auto; }
     .chart-scroll { width: 100%; margin-top: 8px; overflow-x: auto; overflow-y: hidden; padding-bottom: 7px; cursor: grab; scrollbar-color: #8aa6aa #edf3f2; }
     .chart-scroll:active { cursor: grabbing; }
     .chart-scroll > .chart { margin-top: 0; }
-    .audit-table small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; font-weight: 400; }
-    .quality-source-table td:first-child { min-width: 190px; }
-    .quality-error { color: #9b322c !important; white-space: normal; }
-    .quality-exclusion-group { margin-top: 12px; }
-    .quality-exclusion-group:first-child { margin-top: 0; }
-    .quality-exclusion-group > strong { display: block; margin-bottom: 4px; }
-    .quality-exclusion-group .audit-table { margin-top: 0; }
-    .quality-muted { display: block; margin-top: 10px; color: var(--muted); font-size: 12px; }
-    .audit-methods { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
-    .audit-chip { padding: 4px 9px; border-radius: 999px; background: var(--canvas); color: #475569; font-size: 11px; }
     .chart { width: 100%; height: 310px; margin-top: 8px; }
     .chart.tall { height: 370px; }
-    .chart.compact { height: 280px; }
-    .machine-list { margin-top: 16px; display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); }
-    .machine-row { background: #fff; display: grid; grid-template-columns: minmax(90px, 1fr) auto; gap: 12px; padding: 10px 11px; align-items: center; }
-    .machine-row strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .machine-row span { color: var(--muted); font-size: 12px; }
-    .score { font: 700 15px Manrope, sans-serif; color: var(--coral); }
     .primary { padding: 0 18px; height: 44px; }
-    .ranking-toggle { margin-top: 8px; height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--teal-dark); font-size: 12px; font-weight: 600; }
-    .machine-remainder { max-height: 280px; margin-top: 8px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; }
-    .machine-remainder table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    .machine-remainder th, .machine-remainder td { padding: 7px 9px; border-bottom: 1px solid var(--line); text-align: right; }
-    .machine-remainder th:nth-child(2), .machine-remainder td:nth-child(2), .machine-remainder th:nth-child(3), .machine-remainder td:nth-child(3) { text-align: left; }
     @media print {
-      .no-print, .filters, .view-switch { display: none !important; }
+      .filters, .view-switch { display: none !important; }
       .workspace { display: block !important; }
       main { padding: 0 !important; }
       body { background: #fff !important; }
@@ -369,21 +335,6 @@
     .source-history-search { flex: 1 1 220px; min-width: 0; height: 44px; border: 1px solid var(--line); border-radius: 8px; padding: 0 10px; color: var(--ink); }
     .history-button { min-height: 44px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--teal-dark); padding: 0 11px; font-size: 12px; font-weight: 600; white-space: nowrap; }
     .history-button:hover { background: #eaf2fb; }
-    .comparison-tools { display: flex; align-items: center; gap: 8px; margin: 14px 0 10px; }
-    .comparison-search, .comparison-filter { height: 44px; border: 1px solid var(--line); border-radius: 8px; padding: 0 10px; color: var(--ink); background: var(--surface); }
-    .comparison-search { flex: 1 1 280px; min-width: 0; }
-    .comparison-filter { flex: 0 0 170px; }
-    .comparison-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; color: var(--muted); font-size: 12px; }
-    .comparison-meta span { padding: 4px 9px; border-radius: 999px; background: var(--canvas); }
-    .comparison-table { min-width: 1180px; }
-    .comparison-table th:nth-child(6), .comparison-table td:nth-child(6) { text-align: center; }
-    .comparison-table td:nth-child(4), .comparison-table td:nth-child(5) { min-width: 220px; max-width: 340px; }
-    .comparison-table td:nth-child(8) { min-width: 210px; }
-    .comparison-event strong, .comparison-event span { display: block; }
-    .comparison-event strong { color: var(--ink); font-weight: 600; }
-    .comparison-event span { margin-top: 4px; color: var(--muted); }
-    .comparison-event.missing { color: var(--muted); font-style: italic; }
-    .alea-history-table { min-width: 980px; }
     .source-history-table { table-layout: fixed; min-width: 1180px; }
     .source-history-table.nc-history-table { min-width: 1480px; }
     .source-history-table .history-date { width: 92px; }
@@ -400,22 +351,10 @@
     .source-history-table .history-quality-comment { width: 300px; }
     .source-history-table td { overflow-wrap: anywhere; }
     .source-history-table td.numeric, .source-history-table th.numeric { text-align: right; }
-    .alea-history-table td:nth-child(2) { min-width: 100px; font-weight: 600; }
-    .alea-history-table td:nth-child(4) { min-width: 155px; }
-    .alea-history-table td:nth-child(6) { min-width: 220px; max-width: 340px; font-weight: 600; }
-    .alea-history-table td:nth-child(8) { min-width: 220px; max-width: 340px; color: var(--muted); }
     .history-category { display: inline-block; padding: 4px 8px; border-radius: 999px; background: #edf5f5; color: var(--teal-dark); font-size: 11px; font-weight: 600; white-space: nowrap; }
     .history-problem { line-height: 1.45; }
     .history-hypothesis { line-height: 1.45; }
-    .match-badge { display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; }
-    .match-badge.forte { background: #e7f2ea; color: #416c51; }
-    .match-badge.probable { background: #eaf2fb; color: #27577b; }
-    .match-badge.review { background: #fff2cc; color: #7f6000; }
-    .match-badge.none { background: #edf1f4; color: var(--muted); }
-    .match-reasons { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; line-height: 1.4; }
-    .test-label { display: inline-block; margin-left: 7px; padding: 3px 7px; border-radius: 999px; background: #fff2cc; color: #7f6000; font: 700 10px "IBM Plex Sans", sans-serif; vertical-align: 2px; text-transform: uppercase; }
     @keyframes spin { to { transform: rotate(360deg); } }
-
     @media (max-width: 1180px) {
       .kpis { grid-template-columns: repeat(4, minmax(130px, 1fr)); }
     }
@@ -433,7 +372,6 @@
       .review-nc-kpis { max-width: none; }
       .dashboard-grid { grid-template-columns: 1fr; }
       .panel.wide { grid-column: auto; }
-      .definition-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 560px) {
       .brand h1 { font-size: 16px; }
@@ -448,11 +386,7 @@
       .detail-table th, .detail-table td { padding: 8px; }
       .source-history-tools { flex-wrap: wrap; }
       .source-history-search { flex-basis: 100%; }
-      .comparison-tools { flex-wrap: wrap; }
-      .comparison-search { flex-basis: 100%; }
-      .comparison-filter { flex-basis: 100%; }
     }
-
     :root {
       --ink: #143244;
       --ink-strong: #0b2636;
@@ -471,13 +405,11 @@
       --sage: #738e7e;
       --radius: 10px;
     }
-
     body {
       background-color: var(--canvas);
       background-image: linear-gradient(rgba(20, 50, 68, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(20, 50, 68, .035) 1px, transparent 1px);
       background-size: 32px 32px;
     }
-
     .topbar {
       position: sticky;
       top: 0;
@@ -487,7 +419,6 @@
       box-shadow: 0 8px 24px rgba(13, 48, 69, .07);
       backdrop-filter: blur(10px);
     }
-
     .brand { gap: 12px; }
     .brand::before { content: ''; width: 4px; height: 30px; border-radius: 2px; background: var(--coral); }
     .brand-logo { height: 28px; padding-right: 14px; border-right: 1px solid var(--line); }
@@ -499,7 +430,6 @@
     .refresh-state { font-size: 12px; }
     .icon-button { width: 44px; height: 44px; border-color: var(--line); border-radius: 11px; transition: background .18s ease, border-color .18s ease, transform .18s ease; }
     .icon-button:hover { border-color: var(--teal); background: #e8f2f1; transform: translateY(-1px); }
-
     .workspace { grid-template-columns: 284px minmax(0, 1fr); }
     .filters {
       position: sticky;
@@ -531,7 +461,6 @@
     .mes-link { background: var(--teal-dark); border-radius: 9px; }
     .mes-import { border-radius: 9px; transition: background .18s ease, transform .18s ease; }
     .mes-import:hover { background: #e8f2f1; transform: translateY(-1px); }
-
     main { padding: 30px 34px 52px; }
     .section-heading { margin-bottom: 16px; }
     .section-heading h2 { color: var(--ink-strong); font-size: 16px; letter-spacing: .01em; }
@@ -577,24 +506,10 @@
     .panel { padding: 19px; border-color: var(--line); border-radius: 11px; background: rgba(255, 254, 251, .95); box-shadow: 0 7px 18px rgba(13, 48, 69, .045); }
     .panel-title { margin-bottom: 5px; color: var(--ink-strong); font-size: 15px; letter-spacing: .005em; }
     .panel-subtitle { line-height: 1.45; }
-    .definition-box { border-left-color: var(--teal); background: #edf6f3; color: #3b5960; }
-    .audit-chip, .comparison-meta span { background: #eaf2f0; color: #41616a; }
-    .ranking-toggle, .history-button { color: var(--teal-dark); transition: background .18s ease, border-color .18s ease; }
-    .ranking-toggle:hover, .history-button:hover { border-color: #a6c6ca; background: #e8f2f1; }
-    .machine-list { border-color: var(--line); background: var(--line); }
-    .machine-row { background: rgba(255, 255, 255, .84); }
-    .machine-row:hover { background: #f0f8f7; }
-    .score { color: var(--coral); }
-    .comparison-tools { margin-top: 16px; }
-    .comparison-search, .comparison-filter { border-color: #cbdadf; border-radius: 9px; }
-    .comparison-table { min-width: 1120px; }
-    .comparison-table th:nth-child(6), .comparison-table td:nth-child(6) { text-align: center; }
-    .comparison-table td:nth-child(4), .comparison-table td:nth-child(5) { min-width: 220px; max-width: 340px; }
-    .test-label { background: #fff0e8; color: #a84e3b; }
+    .history-button { color: var(--teal-dark); transition: background .18s ease, border-color .18s ease; }
+    .history-button:hover { border-color: #a6c6ca; background: #e8f2f1; }
     .detail-table th { background: var(--header); }
     .detail-table tr:hover td { background: #edf7f5; }
-
-
     .section-heading, .kpis, .dashboard-grid { animation: reveal .45s ease both; }
     .kpis { animation-delay: .05s; }
     .dashboard-grid { animation-delay: .1s; }
@@ -602,38 +517,42 @@
     .review-heading:first-of-type { margin-top: 0; }
     .review-cost-controls { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 14px 0; }
     .review-cost-controls p { margin: 0; color: var(--muted); font-size: 12px; }
-    .activity-flow { padding: 0; overflow: hidden; }
-    .activity-flow-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 20px 22px 16px; border-bottom: 1px solid var(--line); }
-    .flow-refresh { flex: none; padding: 6px 10px; border: 1px solid #b8d6d9; border-radius: 6px; background: #edf7f5; color: var(--teal-dark); font-size: 11px; font-weight: 600; }
-    .activity-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin: 0; padding: 18px 22px 8px; list-style: none; counter-reset: none; }
-    .activity-step { position: relative; margin-right: 26px; padding: 16px; border: 1px solid var(--line); border-top: 4px solid var(--teal); border-radius: 10px; background: #fff; transition: transform .18s ease, box-shadow .18s ease; }
-    .activity-step:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(18,24,32,.08); }
-    .activity-step:last-child { margin-right: 0; }
-    .activity-step:not(:last-child)::after { content: ''; position: absolute; top: 50%; right: -21px; width: 14px; height: 14px; border-top: 2px solid #8aa3ab; border-right: 2px solid #8aa3ab; transform: translateY(-50%) rotate(45deg); }
-    .activity-step.step-field { border-top-color: #5b8fb9; }
-    .activity-step.step-data { border-top-color: var(--teal); }
-    .activity-step.step-analysis { border-top-color: #d99a4e; }
-    .activity-step.step-decision { border-top-color: #8e7cc3; }
-    .activity-step h4 { margin: 6px 0 4px; font: 700 15px Manrope, sans-serif; color: var(--ink); }
-    .activity-step p { margin: 0 0 10px; color: var(--muted); font-size: 12px; line-height: 1.45; }
-    .activity-step ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: 12px; color: var(--ink); }
-    .activity-step ul b { font-variant-numeric: tabular-nums; }
-    .step-index { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--canvas); color: var(--ink); font-size: 12px; font-weight: 700; }
-    .step-tones li { display: flex; align-items: center; gap: 7px; }
-    .step-tones span { width: 11px; height: 11px; border-radius: 3px; flex: none; }
-    .step-links { display: grid; gap: 6px; margin-top: 10px; }
-    .step-links button { min-height: 32px; padding: 0 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--canvas); color: var(--teal-dark); font: inherit; font-size: 12px; font-weight: 600; text-align: left; cursor: pointer; }
-    .step-links button:hover { border-color: var(--teal); background: #fff; }
-    .activity-loop { margin: 8px 22px 18px; padding: 10px 12px; border: 1px dashed #b8c9cf; border-radius: 8px; color: var(--muted); font-size: 12px; }
-    @media (max-width: 1100px) {
-      .activity-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-      .activity-step { margin-right: 0; }
-      .activity-step::after { display: none; }
-    }
+    .data-flow-panel { padding: 0; overflow: hidden; }
+    .data-flow-panel .panel-head { display: flex; align-items: start; justify-content: space-between; gap: 16px; padding: 20px 21px 17px; }
+    .data-flow-panel .panel-head .panel-title { margin-bottom: 4px; }
+    .flow-badge { flex: 0 0 auto; padding: 6px 9px; border: 1px solid #b8d6d9; border-radius: 6px; background: #edf7f5; color: var(--teal-dark); font-size: 10px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
+    .data-flow-wrap { overflow-x: auto; border-top: 1px solid var(--line); background: #f7faf8; }
+    .data-flow-svg { display: block; width: 100%; min-width: 900px; height: auto; }
+    .data-flow-svg text { font-family: "IBM Plex Sans", sans-serif; fill: var(--ink); }
+    .data-flow-svg .flow-zone-label { font-family: "IBM Plex Sans", sans-serif; }
+    .data-flow-svg .flow-title { font-size: 13px; font-weight: 700; }
+    .data-flow-svg .flow-meta { font-family: "IBM Plex Sans", sans-serif; font-size: 10px; fill: var(--muted); }
+    .data-flow-svg .flow-tag { font-size: 9px; font-weight: 700; letter-spacing: .12em; fill: var(--muted); }
+    .data-flow-svg .flow-node rect { fill: #fff; stroke: #b7ccd1; stroke-width: 1.2; }
+    .data-flow-svg .flow-node.source rect { fill: #f9fcfb; }
+    .data-flow-svg .flow-node.focal rect { fill: #fff2eb; stroke: var(--coral); stroke-width: 1.8; }
+    .data-flow-svg .flow-node.store rect { fill: var(--header); stroke: var(--header); }
+    .data-flow-svg .flow-node.store text { fill: #fff; }
+    .data-flow-svg .flow-node.store .flow-meta, .data-flow-svg .flow-node.store .flow-tag { fill: #b9d9dc; }
+    .data-flow-svg .flow-node.output rect { fill: #eef7f5; stroke: var(--teal); }
+    .data-flow-svg .flow-node.support rect { fill: #fff9ef; stroke: var(--amber); stroke-dasharray: 5 4; }
+    .data-flow-svg .flow-node.support .flow-title { font-size: 11px; }
+    .data-flow-svg .flow-node .flow-mark { fill: var(--teal); }
+    .data-flow-svg .flow-node.focal .flow-mark { fill: var(--coral); }
+    .data-flow-svg .flow-node.store .flow-mark { fill: #9bcdd0; }
+    .data-flow-svg .flow-connector { fill: none; stroke: #75909a; stroke-width: 1.25; marker-end: url(#flow-arrow); }
+    .data-flow-svg .flow-connector.primary { stroke: var(--coral); stroke-width: 1.8; marker-end: url(#flow-arrow-accent); }
+    .data-flow-svg .flow-connector.support { stroke: #a58346; stroke-dasharray: 5 4; marker-end: url(#flow-arrow-muted); }
+    .data-flow-svg .flow-edge-label { font-size: 9px; font-weight: 600; fill: #6b8189; }
+    .data-flow-svg .flow-edge-bg { fill: #f7faf8; opacity: .96; }
+    .data-flow-note { display: flex; flex-wrap: wrap; gap: 9px 18px; padding: 12px 21px 15px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+    .data-flow-note span { display: inline-flex; align-items: center; gap: 7px; }
+    .data-flow-note span::before { content: ''; width: 18px; height: 2px; background: #75909a; }
+    .data-flow-note span:nth-child(2)::before { background: var(--coral); }
+    .data-flow-note span:nth-child(3)::before { height: 0; border-top: 2px dashed var(--amber); background: transparent; }
     @media (max-width: 640px) {
-      .activity-flow-head { flex-direction: column; padding: 16px; }
-      .activity-steps { grid-template-columns: 1fr; padding: 14px 16px 6px; }
-      .activity-loop { margin: 8px 16px 16px; }
+      .data-flow-panel .panel-head { flex-direction: column; align-items: flex-start; padding: 17px 15px 14px; }
+      .data-flow-note { padding-left: 15px; padding-right: 15px; }
     }
     :root { --tone-open: #2f6fb3; --tone-recent: #3f9a5f; --tone-recurring: #f2b27a; --tone-stale: #8e7cc3; --tone-unknown: #a7b0b1; }
     .action-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0 0 14px; padding: 10px 12px; list-style: none; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: 12px; color: var(--muted); }
@@ -669,13 +588,11 @@
     .review-rule strong { color: var(--ink-strong); }
     #viewOverview .dashboard-grid { margin-top: 0; }
     @keyframes reveal { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-
     @media (max-width: 1180px) {
       .topbar { padding: 0 22px; }
       main { padding-left: 24px; padding-right: 24px; }
       .dashboard-intro { grid-template-columns: minmax(0, 1fr) 220px; }
     }
-
     @media (max-width: 860px) {
       .topbar { position: sticky; flex-wrap: wrap; gap: 10px 14px; padding: 11px 16px 12px; }
       .brand { flex: 1 1 auto; min-width: 220px; }
@@ -694,7 +611,6 @@
       .intro-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 16px 0 0; border-top: 1px solid rgba(197, 230, 232, .35); border-left: 0; }
       .dashboard-intro h2 { font-size: 26px; }
     }
-
     @media (max-width: 560px) {
       .topbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
       .brand { min-width: 0; gap: 8px; }
@@ -710,11 +626,9 @@
       .panel { padding: 15px; }
       .panel.chart-focused { inset: 8px; padding: 16px; }
     }
-
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
     }
-
     @media (min-width: 861px) {
       .workspace.filters-collapsed .filters:hover,
       .workspace.filters-collapsed .filters:has(.filter-content :focus) {
@@ -800,48 +714,51 @@
       <main id="main-content">
         <div id="viewOverview">
           <section class="dashboard-grid" id="overviewFlow">
-          <article class="panel wide activity-flow" aria-labelledby="flowTitle">
-            <header class="activity-flow-head">
-              <div><h3 class="panel-title" id="flowTitle">Du terrain à la décision</h3>
-              <p class="panel-subtitle">Chaque aléa ou NC remonté alimente la revue MFT ; chaque décision MFT revient colorer le tableau de bord à l’actualisation suivante (toutes les 6 h).</p></div>
-              <span class="flow-refresh" id="flowRefresh">Données : –</span>
-            </header>
-            <ol class="activity-steps">
-              <li class="activity-step step-field">
-                <span class="step-index">1</span><h4>Terrain</h4><p>Les compagnons et la qualité déclarent.</p>
-                <ul>
-                  <li><b id="flowAleas">–</b> aléas production · Waterspiders · postes P355 / P360 / P370</li>
-                  <li><b id="flowMes">–</b> aléas MES UPA / MEDU · BDD Aléas MES (dossier « MES A DEPOSER »)</li>
-                  <li><b id="flowNc">–</b> NC · feuille « Données NC TC »</li>
-                </ul>
-              </li>
-              <li class="activity-step step-data">
-                <span class="step-index">2</span><h4>Consolidation</h4><p>Apps Script normalise et rattache chaque événement à un IMMO.</p>
-                <ul>
-                  <li>BDD Immo et Famille (master IMMO)</li>
-                  <li>FAITS_IMMO : 24 mois actifs, archives au-delà</li>
-                  <li>Couverture master : <b id="flowCoverage">–</b></li>
-                </ul>
-              </li>
-              <li class="activity-step step-analysis">
-                <span class="step-index">3</span><h4>Analyse</h4><p>Les coûts et les indisponibilités désignent les machines à traiter.</p>
-                <div class="step-links">
-                  <button type="button" data-goto="dashboard">Pilotage · item 1 et item 2 →</button>
-                  <button type="button" data-goto="nc">Analyses NC TC →</button>
-                </div>
-              </li>
-              <li class="activity-step step-decision">
-                <span class="step-index">4</span><h4>Décision MFT</h4><p>Plans MFT TC 370 et 355/360/OSW.</p>
-                <ul class="step-tones">
-                  <li><span style="background:#8e7cc3"></span>Aucune action · <b id="flowToneNone">–</b></li>
-                  <li><span style="background:#f2b27a"></span>Problème qui revient · <b id="flowToneRecurring">–</b></li>
-                  <li><span style="background:#2f6fb3"></span>Action en cours · <b id="flowToneOpen">–</b></li>
-                  <li><span style="background:#3f9a5f"></span>Clôturée &lt; 6 mois · <b id="flowToneDone">–</b></li>
-                </ul>
-                <div class="step-links"><button type="button" data-goto="review-mft">Préparer la réunion MFT →</button></div>
-              </li>
-            </ol>
-            <p class="activity-loop">↺ Les actions décidées sont suivies dans le plan MFT puis relues par le tableau de bord : une machine passe du violet ou de l’orange au bleu, puis au vert.</p>
+          <article class="panel wide data-flow-panel" aria-labelledby="flowTitle">
+            <div class="panel-head">
+              <div><h3 class="panel-title" id="flowTitle">Du terrain à la décision</h3><p class="panel-subtitle">Les sources sont normalisées, filtrées et regroupées avant d’alimenter les analyses.</p></div>
+              <span class="flow-badge">Flux de données</span>
+            </div>
+            <div class="data-flow-wrap">
+              <svg class="data-flow-svg" viewBox="0 0 1160 342" role="img" aria-labelledby="flowSvgTitle flowSvgDescription">
+                <title id="flowSvgTitle">Flux des données du dashboard machine</title>
+                <desc id="flowSvgDescription">Les sources master, NC et MES passent par Apps Script, sont consolidées dans FAITS_IMMO puis alimentent le pilotage et les analyses.</desc>
+                <defs>
+                  <marker id="flow-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#75909a"></polygon></marker>
+                  <marker id="flow-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#d56f56"></polygon></marker>
+                  <marker id="flow-arrow-muted" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#a58346"></polygon></marker>
+                </defs>
+                <rect class="flow-zone" x="300" y="28" width="500" height="278" rx="8" fill="#f0f7f5" stroke="#b9d2d1"></rect>
+                <text class="flow-zone-label" x="320" y="48" font-size="9" font-weight="700" letter-spacing="1.4" fill="#627789">PLATEFORME DE PILOTAGE</text>
+
+                <path class="flow-connector" d="M248 77 H300 V128 H352"></path>
+                <path class="flow-connector" d="M248 142 H352"></path>
+                <path class="flow-connector" d="M248 207 H300 V156 H352"></path>
+                <path class="flow-connector primary" d="M548 142 H576"></path>
+                <path class="flow-connector" d="M776 142 H806 V117 H858"></path>
+                <path class="flow-connector" d="M776 142 H806 V207 H858"></path>
+                <path class="flow-connector support" d="M450 180 V214 H450 V231"></path>
+                <path class="flow-connector support" d="M674 180 V214 H674 V231"></path>
+
+                <rect class="flow-edge-bg" x="253" y="64" width="50" height="18" rx="4"></rect><text class="flow-edge-label" x="260" y="76">ENTRÉE</text>
+                <rect class="flow-edge-bg" x="548" y="82" width="63" height="18" rx="4"></rect><text class="flow-edge-label" x="555" y="94">ÉCRITURE</text>
+                <rect class="flow-edge-bg" x="784" y="87" width="53" height="18" rx="4"></rect><text class="flow-edge-label" x="791" y="99">LECTURE</text>
+                <rect class="flow-edge-bg" x="444" y="204" width="66" height="18" rx="4"></rect><text class="flow-edge-label" x="451" y="216">CONTRÔLE</text>
+
+                <g class="flow-node source" transform="translate(28 52)"><rect width="220" height="50" rx="6"></rect><circle class="flow-mark" cx="18" cy="25" r="7"></circle><text class="flow-tag" x="34" y="19">RÉFÉRENTIEL</text><text class="flow-title" x="34" y="36">BDD Immo et Famille</text></g>
+                <g class="flow-node source" transform="translate(28 117)"><rect width="220" height="50" rx="6"></rect><circle class="flow-mark" cx="18" cy="25" r="7"></circle><text class="flow-tag" x="34" y="19">QUALITÉ</text><text class="flow-title" x="34" y="36">Données NC TC</text></g>
+                <g class="flow-node source" transform="translate(28 182)"><rect width="220" height="50" rx="6"></rect><circle class="flow-mark" cx="18" cy="25" r="7"></circle><text class="flow-tag" x="34" y="19">IMPORT</text><text class="flow-title" x="34" y="36">BDD Aléas MES</text></g>
+
+                <g class="flow-node focal" transform="translate(352 104)"><rect width="196" height="76" rx="7"></rect><circle class="flow-mark" cx="20" cy="28" r="8"></circle><text class="flow-tag" x="38" y="25">TRANSFORMATION</text><text class="flow-title" x="18" y="51">Apps Script</text><text class="flow-meta" x="18" y="66">normalise · filtre · rapproche</text></g>
+                <g class="flow-node store" transform="translate(576 104)"><rect width="200" height="76" rx="7"></rect><circle class="flow-mark" cx="20" cy="28" r="8"></circle><text class="flow-tag" x="38" y="25">TABLE CENTRALE</text><text class="flow-title" x="18" y="51">FAITS_IMMO</text><text class="flow-meta" x="18" y="66">faits actifs · 24 mois</text></g>
+                <g class="flow-node support" transform="translate(352 231)"><rect width="196" height="45" rx="6"></rect><text class="flow-tag" x="16" y="19">QUALITÉ</text><text class="flow-title" x="16" y="35">CONTROLES</text></g>
+                <g class="flow-node support" transform="translate(576 231)"><rect width="200" height="45" rx="6"></rect><text class="flow-tag" x="16" y="19">RÉTENTION</text><text class="flow-title" x="16" y="35">FAITS_IMMO_ARCHIVES</text></g>
+
+                <g class="flow-node output" transform="translate(858 92)"><rect width="274" height="50" rx="6"></rect><circle class="flow-mark" cx="18" cy="25" r="7"></circle><text class="flow-tag" x="34" y="19">REVUE TC</text><text class="flow-title" x="34" y="36">Pilotage disponibilité · coûts</text></g>
+                <g class="flow-node output" transform="translate(858 182)"><rect width="274" height="50" rx="6"></rect><circle class="flow-mark" cx="18" cy="25" r="7"></circle><text class="flow-tag" x="34" y="19">ANALYSES TERRAIN</text><text class="flow-title" x="34" y="36">NC TC · MSN</text></g>
+              </svg>
+            </div>
+            <div class="data-flow-note"><span>Référentiel et événements métier</span><span>Consolidation commune par IMMO</span><span>Contrôles et archivage séparés</span></div>
           </article>
           </section>
         </div>
@@ -851,27 +768,13 @@
           <div class="intro-copy">
             <div class="intro-eyebrow">Centre de pilotage · TC STR</div>
             <h2 id="dashboardIntroTitle">Piloter la machine à partir du signal terrain.</h2>
-            <p>Les remontées production, les NC et les extractions MES sont ramenées au même périmètre de perçage pour faire ressortir les machines, les familles et les priorités.</p>
+            <p>Les NC et les extractions MES sont ramenées au même périmètre de perçage pour faire ressortir les machines, les familles et les priorités.</p>
           </div>
           <div class="intro-facts" aria-label="Périmètre de l’analyse">
             <div class="intro-fact"><span class="intro-fact-label">Périmètre</span><strong>TC STR</strong><span>Machines de perçage</span></div>
-            <div class="intro-fact"><span class="intro-fact-label">Sources</span><strong>03</strong><span>Production · NC · MES</span></div>
+            <div class="intro-fact"><span class="intro-fact-label">Sources</span><strong>02</strong><span>NC · MES</span></div>
             <div class="intro-fact"><span class="intro-fact-label">Horizon</span><strong>24 mois</strong><span>Faits actifs</span></div>
           </div>
-        </section>
-        <div class="section-heading" hidden>
-          <div><h2>Vue consolidée</h2><p id="legacyScopeLabel">Données rattachées aux IMMO de perçage du master</p></div>
-        </div>
-
-        <section class="kpis" aria-label="Indicateurs clés" hidden>
-          <article class="kpi"><div class="kpi-label">Impacts machine</div><div class="kpi-value" id="kpiEvents">–</div><div class="kpi-note" id="kpiDeclarations">– déclarations</div></article>
-          <article class="kpi alea"><div class="kpi-label">Aléas consolidés</div><div class="kpi-value" id="kpiAleas">–</div><div class="kpi-note" id="kpiMes">dont – MES</div></article>
-          <article class="kpi nc"><div class="kpi-label">Non-conformités</div><div class="kpi-value" id="kpiNc">–</div><div class="kpi-note" id="kpiNcShare">– % des impacts</div></article>
-          <article class="kpi mes"><div class="kpi-label">Machines touchées</div><div class="kpi-value" id="kpiMachines">–</div><div class="kpi-note">IMMO distincts</div></article>
-          <article class="kpi"><div class="kpi-label">Temps perdu machine TC</div><div class="kpi-value" id="kpiDowntime">–</div><div class="kpi-note" id="kpiDowntimeNote">Aléas, NC et MES</div></article>
-          <article class="kpi"><div class="kpi-label">Indice d’impact (points)</div><div class="kpi-value" id="kpiImpact">–</div><div class="kpi-note" id="kpiImpactNote">Priorité pondérée, pas un pourcentage</div></article>
-          <article class="kpi quality"><div class="kpi-label">Couverture master</div><div class="kpi-value" id="kpiCoverageMaster">–</div><div class="kpi-note" id="kpiCoverageMasterNote">impacts reliés à un IMMO</div></article>
-          <article class="kpi recurrence"><div class="kpi-label">Machines récurrentes</div><div class="kpi-value" id="kpiRecurrent">–</div><div class="kpi-note" id="kpiRecurrentNote">au moins 2 impacts</div></article>
         </section>
 
         <div class="section-heading review-heading">
@@ -917,48 +820,6 @@
           <article class="panel wide"><h3 class="panel-title">Top des défauts machines</h3><p class="panel-subtitle">Tête de Pareto des types de défaut ; cliquez sur une barre pour revenir aux événements terrain</p><div class="chart" id="reviewProblemChart"></div></article>
         </section>
 
-        <section class="dashboard-grid" id="dashboard" hidden>
-          <article class="panel wide"><h3 class="panel-title">Évolution hebdomadaire des défauts</h3><p class="panel-subtitle" id="trendSubtitle">Aléas production, non-conformités et extractions MES assemblés</p><div class="chart" id="trendChart"></div></article>
-          <article class="panel"><h3 class="panel-title">Pareto des IMMO</h3><p class="panel-subtitle" id="machineSubtitle">Top 10 en première vue, classé par nombre d’impacts machine</p><div class="chart tall" id="machineChart"></div><button class="ranking-toggle" id="machineRemainderToggle" type="button" hidden></button><div class="machine-remainder" id="machineRemainder" hidden></div></article>
-          <article class="panel"><h3 class="panel-title">Temps perdu par famille de machine</h3><p class="panel-subtitle">Heures perdues cumulées par famille, toutes sources confondues</p><div class="chart tall" id="downtimeFamilyChart"></div></article>
-          <article class="panel"><h3 class="panel-title">Pareto des familles</h3><p class="panel-subtitle" id="familySubtitle">Barres = impacts avec famille master ; courbe = impacts pour 1 000 perçages, pas un %</p><div class="chart tall" id="familyChart"></div></article>
-          <article class="panel"><h3 class="panel-title">Top des défauts machines</h3><p class="panel-subtitle" id="problemSubtitle">Axe Y = défaut ; axe X = points d’impact pondérés</p><div class="chart" id="problemChart"></div></article>
-          <article class="panel"><h3 class="panel-title">Répartition des sources</h3><p class="panel-subtitle">Contribution à l’analyse globale</p><div class="chart compact" id="sourceChart"></div></article>
-          <article class="panel wide"><h3 class="panel-title">Temps perdu machine par défaut</h3><p class="panel-subtitle" id="downtimeSubtitle">Axe Y = défaut ; axe X = somme de Temps aléas, en heures, pour les aléas, NC et MES</p><div class="chart" id="downtimeChart"></div></article>
-        </section>
-        </div>
-
-        <div id="viewQuality" style="display:none">
-          <div class="section-heading"><div><h2>Qualité des données</h2><p id="qualityScopeLabel">Lignes sources avant consolidation · TC STR · chargement…</p></div></div>
-          <section class="kpis" aria-label="Indicateurs de qualité des données">
-            <article class="kpi quality"><div class="kpi-label">Lignes sources</div><div class="kpi-value" id="qualityRawRows">–</div><div class="kpi-note">Production + NC historique</div></article>
-            <article class="kpi"><div class="kpi-label">Lignes retenues</div><div class="kpi-value" id="qualityRetainedRows">–</div><div class="kpi-note" id="qualityRetainedNote">avant dédoublonnage</div></article>
-            <article class="kpi nc"><div class="kpi-label">Lignes exclues</div><div class="kpi-value" id="qualityExcludedRows">–</div><div class="kpi-note" id="qualityExcludedNote">motif à qualifier</div></article>
-            <article class="kpi mes"><div class="kpi-label">Staging MES</div><div class="kpi-value" id="qualityMesRows">–</div><div class="kpi-note" id="qualityMesNote">lignes importées</div></article>
-            <article class="kpi"><div class="kpi-label">Imports en erreur</div><div class="kpi-value" id="qualityImportErrors">–</div><div class="kpi-note" id="qualityImportNote">journal d’import</div></article>
-          </section>
-          <section class="dashboard-grid">
-            <article class="panel wide">
-              <h3 class="panel-title">Audit des sources avant consolidation</h3>
-              <p class="panel-subtitle">Le dénominateur est la ligne source filtrée, et non une ligne déjà acceptée dans FAITS_IMMO.</p>
-              <div id="dataQualityAudit"></div>
-            </article>
-            <article class="panel">
-              <h3 class="panel-title">Motifs d’exclusion</h3>
-              <p class="panel-subtitle">Une ligne peut aussi présenter des champs incomplets sans être exclue.</p>
-              <div id="qualityExclusions"></div>
-            </article>
-            <article class="panel">
-              <h3 class="panel-title">Staging MES et workflow NC</h3>
-              <p class="panel-subtitle" id="qualityMesSubtitle">Traçabilité des lignes importées avant validation et rapprochement.</p>
-              <div id="qualityMesAudit"></div>
-            </article>
-            <article class="panel wide">
-              <h3 class="panel-title">Journal des imports</h3>
-              <p class="panel-subtitle">Les erreurs de lecture ou de classification restent visibles ici.</p>
-              <div id="qualityImportAudit"></div>
-            </article>
-          </section>
         </div>
 
         <div id="viewNc" style="display:none">
@@ -977,35 +838,6 @@
             <article class="panel"><h3 class="panel-title">Typologies de défaut</h3><p class="panel-subtitle">Top des défauts NC</p><div class="chart" id="ncProblemChart"></div></article>
             <article class="panel"><h3 class="panel-title">NC par MSN</h3><p class="panel-subtitle">MSN présents dans les données source</p><div class="chart" id="ncMsnChart"></div></article>
             <article class="panel wide"><h3 class="panel-title">Détail des non-conformités</h3><p class="panel-subtitle">NC historiques, 20 événements les plus récents, extensible jusqu’à 100</p><div class="detail-table-wrap" id="ncDetails"></div></article>
-          </section>
-        </div>
-
-        <div id="viewCombinedAlea" style="display:none">
-          <div class="section-heading"><div><h2>Aléas combinés <span class="test-label">vue test</span></h2><p id="combinedAleaScopeLabel">Comparaison des remontées production et MES</p></div></div>
-          <section class="kpis" aria-label="Indicateurs des aléas combinés">
-            <article class="kpi alea"><div class="kpi-label">Aléas production</div><div class="kpi-value" id="combinedProductionEvents">–</div><div class="kpi-note">événements filtrés</div></article>
-            <article class="kpi mes"><div class="kpi-label">Aléas MES</div><div class="kpi-value" id="combinedMesEvents">–</div><div class="kpi-note">événements filtrés</div></article>
-            <article class="kpi quality"><div class="kpi-label">Correspondances</div><div class="kpi-value" id="combinedMatchedEvents">–</div><div class="kpi-note" id="combinedMatchedNote">fortes : – · probables : –</div></article>
-            <article class="kpi recurrence"><div class="kpi-label">Couverture croisée</div><div class="kpi-value" id="combinedCoverage">–</div><div class="kpi-note" id="combinedCoverageNote">correspondances / production</div></article>
-            <article class="kpi"><div class="kpi-label">Temps perdu MES</div><div class="kpi-value" id="combinedMesHours">–</div><div class="kpi-note" id="combinedHoursNote">Production : – h</div></article>
-          </section>
-          <section class="dashboard-grid">
-            <article class="panel wide">
-              <h3 class="panel-title">Rapprochement Production / MES</h3>
-              <p class="panel-subtitle">Une correspondance est proposée par date à ±1 jour, poste, IMMO et mots-clés communs. Elle reste à confirmer par le métier.</p>
-              <div class="comparison-meta" id="combinedAleaMeta"></div>
-              <div class="comparison-tools">
-                <input class="comparison-search" id="combinedAleaSearch" type="search" placeholder="Rechercher un IMMO, un défaut ou un commentaire" aria-label="Rechercher dans les aléas combinés">
-                <select class="comparison-filter" id="combinedAleaMatchFilter" aria-label="Filtrer par niveau de correspondance">
-                  <option value="">Tous les niveaux</option>
-                  <option value="Forte">Correspondance forte</option>
-                  <option value="Probable">Correspondance probable</option>
-                  <option value="À vérifier">À vérifier</option>
-                  <option value="Aucune">Sans correspondance</option>
-                </select>
-              </div>
-              <div class="detail-table-wrap" id="combinedAleaDetails"></div>
-            </article>
           </section>
         </div>
 
@@ -1035,19 +867,6 @@
       document.getElementById('filters').addEventListener('input', updateActiveFilterCount_);
       document.getElementById('filters').addEventListener('change', updateActiveFilterCount_);
       initMultiSelects_();
-      document.getElementById('overviewFlow').addEventListener('click', event => {
-        const target = event.target.closest('[data-goto]');
-        if (!target) return;
-        if (target.dataset.goto === 'review-mft') {
-          setMultiSelectValues_('actionTone', ACTION_TONES_TO_REVIEW);
-          syncActionLegend_();
-          updateActiveFilterCount_();
-          switchView('dashboard');
-          requestAnimationFrame(() => { const legend = document.getElementById('actionPlanLegend'); if (legend) legend.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
-          return;
-        }
-        switchView(target.dataset.goto);
-      });
       fillMultiSelect_('actionTone', ACTION_TONES.map(tone => tone.value),
         value => (ACTION_TONES.find(tone => tone.value === value) || {}).label || value,
         value => (ACTION_TONES.find(tone => tone.value === value) || {}).color || '#a7b0b1');
@@ -1083,7 +902,6 @@
       document.querySelectorAll('#viewSwitch button').forEach(button => {
         button.addEventListener('click', () => switchView(button.dataset.view));
       });
-      document.getElementById('machineRemainderToggle').addEventListener('click', toggleMachineRemainder);
       document.querySelectorAll('#reviewSourceSwitch button').forEach(button => {
         button.addEventListener('click', () => {
           window.reviewCostSource_ = button.dataset.reviewSource;
@@ -1284,14 +1102,6 @@
       loadWithBrowserCache_('dashboard', 'getDashboardData', [readFilters(), publishedOnly === true], renderDashboard);
     }
 
-    function loadDataQuality() {
-      setLoading(true, 'Audit des sources en cours…');
-      google.script.run
-        .withSuccessHandler(renderDataQuality)
-        .withFailureHandler(showError)
-        .getDataQualityAuditData(readFilters());
-    }
-
     function reloadCurrentView(publishedOnly = false) {
       const active = document.querySelector('#viewSwitch button.active').dataset.view;
       if (active === 'nc') return loadSourceAnalysis('NC', publishedOnly === true);
@@ -1301,14 +1111,6 @@
     function loadSourceAnalysis(source, publishedOnly = false) {
       loadWithBrowserCache_(`source-${source}`, 'getSourceAnalysisData', [source, readFilters(), publishedOnly === true],
         data => renderSourceAnalysis(source, data), 'Chargement de l’analyse NC…');
-    }
-
-    function loadCombinedAlea() {
-      setLoading(true, 'Chargement du rapprochement Production / MES…');
-      google.script.run
-        .withSuccessHandler(renderCombinedAlea)
-        .withFailureHandler(showError)
-        .getCombinedAleaAnalysisData(readFilters());
     }
 
     function switchView(view) {
@@ -1422,94 +1224,12 @@
           ? `Suivi des plans TC incomplet (${formatNumber(actionCostQuality.sourcesRead || 0)}/${formatNumber(actionCostQuality.sourceCount || 0)} sources lues)`
           : 'Suivi des plans TC indisponible · statut gris';
       }
-      document.getElementById('kpiEvents').textContent = formatNumber(kpi.events);
-      document.getElementById('kpiDeclarations').textContent = kpi.impactsPerMsn
-        ? `${formatNumber(kpi.declarations)} déclarations · ${formatDecimal(kpi.impactsPerMsn)} impacts/MSN`
-        : `${formatNumber(kpi.declarations)} déclarations · activité MSN indisponible`;
-      document.getElementById('kpiAleas').textContent = formatNumber(kpi.aleas + kpi.mes);
-      document.getElementById('kpiMachines').textContent = formatNumber(kpi.machines);
-      document.getElementById('kpiNc').textContent = formatNumber(kpi.nc);
-      document.getElementById('kpiMes').textContent = `dont ${formatNumber(kpi.mes)} MES`;
-      document.getElementById('kpiNcShare').textContent = `${formatNumber(kpi.ncShare)} % des impacts`;
-      document.getElementById('kpiDowntime').textContent = `${formatDecimal(kpi.downtimeHours)} h`;
-      const downtimeBySource = kpi.downtimeBySource || {};
-      document.getElementById('kpiDowntimeNote').textContent = `${formatDecimal(kpi.averageDowntime || 0)} h moy. / impact · NC ${formatDecimal(downtimeBySource.NC || 0)} h · MES ${formatDecimal(downtimeBySource.ALEA_MES || 0)} h`;
-      document.getElementById('kpiImpact').textContent = formatNumber(kpi.impactScore);
-      document.getElementById('kpiImpactNote').textContent = kpi.costCoverage
-        ? `${data.definitions.impactFormula} · ${formatCurrency(kpi.totalCost)} estimés (${kpi.costCoverage} % couverts)`
-        : `${data.definitions.impactFormula} · points de priorité, pas un %`;
-      document.getElementById('kpiCoverageMaster').textContent = `${formatNumber(kpi.masterCoverage)} %`;
-      document.getElementById('kpiCoverageMasterNote').textContent = `${formatNumber(kpi.masterMatchedImpacts)} / ${formatNumber(kpi.events)} impacts reliés au master · ${formatNumber(kpi.identifiedImpacts)} avec IMMO renseigné`;
-      document.getElementById('kpiRecurrent').textContent = formatNumber(kpi.recurrentMachines);
-      document.getElementById('kpiRecurrentNote').textContent = `Top 5 = ${formatNumber(kpi.topFiveMachineShare)} % des impacts machine`;
-      document.getElementById('trendSubtitle').textContent = `Aléas production, non-conformités et extractions MES · ${data.trendLabel}, mêmes filtres que les KPI${trendQualityNote_(data.trendQuality)}`;
-      document.getElementById('downtimeSubtitle').textContent = `Heures perdues cumulées par famille de machine, avec les familles absentes séparées`;
-      document.getElementById('problemSubtitle').textContent = `Axe Y = défaut · axe X = points pondérés. ${data.definitions.problemDimension}`;
-      document.getElementById('familySubtitle').textContent = `Barres = impacts par famille de machine · courbe = impacts pour 1 000 perçages, pas un %`;
-      renderMachineRemainder_(data.machines || []);
       document.getElementById('scopeLabel').textContent = scopeText();
-      renderOverviewFlow_(data);
       if (data.empty) {
         showChartMessage(data.message, 'empty');
         return;
       }
       drawChartsWhenReady(data);
-    }
-
-    function renderDataQuality(data) {
-      window.currentQualityData = data || {};
-      setLoading(false);
-      const sources = window.currentQualityData.sources || [];
-      const rawRows = sources.reduce((sum, item) => sum + (item.rawRows || 0), 0);
-      const retainedRows = sources.reduce((sum, item) => sum + (item.retainedRows || 0), 0);
-      const excludedRows = sources.reduce((sum, item) => sum + (item.excludedRows || 0), 0);
-      const mes = window.currentQualityData.mes || {};
-      const imports = window.currentQualityData.imports || {};
-      const importErrors = (imports.errors || []).length;
-      document.getElementById('qualityScopeLabel').textContent = qualityScopeText_(window.currentQualityData.filters || {});
-      document.getElementById('qualityRawRows').textContent = formatNumber(rawRows);
-      document.getElementById('qualityRetainedRows').textContent = formatNumber(retainedRows);
-      document.getElementById('qualityRetainedNote').textContent = `${qualityRateText_({ numerator: retainedRows, denominator: rawRows })} · avant dédoublonnage`;
-      document.getElementById('qualityExcludedRows').textContent = formatNumber(excludedRows);
-      document.getElementById('qualityExcludedNote').textContent = rawRows ? `${qualityRateText_({ numerator: excludedRows, denominator: rawRows })} · motifs ci-dessous` : 'aucune ligne source';
-      document.getElementById('qualityMesRows').textContent = formatNumber(mes.stagingRows || 0);
-      document.getElementById('qualityMesNote').textContent = `${formatNumber(mes.stagingQuantity || 0)} quantité(s) · STG_MES`;
-      document.getElementById('qualityImportErrors').textContent = formatNumber(importErrors);
-      document.getElementById('qualityImportNote').textContent = `${formatNumber(imports.rows || 0)} entrée(s) dans JOURNAL_IMPORT`;
-      renderQualityAudit_(window.currentQualityData);
-      renderQualityExclusions_(window.currentQualityData);
-      renderMesQualityAudit_(mes);
-      renderImportQualityAudit_(imports);
-    }
-
-    function qualityScopeText_(filters) {
-      const period = filters.from && filters.to ? `du ${formatInputDate(filters.from)} au ${formatInputDate(filters.to)}` : 'toute la période';
-      const businessFilters = ['family', 'source', 'immo', 'station'].filter(key => hasFilterValue_(filters[key])).length;
-      return `Sources brutes TC STR · ${period}${businessFilters ? ` · ${businessFilters} filtre(s) métier` : ''}`;
-    }
-
-    function qualityRateText_(rate) {
-      const value = rate || { numerator: 0, denominator: 0, percentage: 0 };
-      return `${formatNumber(value.numerator)} / ${formatNumber(value.denominator)} (${formatDecimal(value.percentage)} %)`.replace('(0,0 %)', '(0 %)');
-    }
-
-    function trendQualityNote_(quality) {
-      const mes = quality && quality.mes;
-      if (!mes || !mes.peak) return '';
-      const alerts = mes.alerts || [];
-      const peakAlert = alerts.find(item => item.week === mes.peak.week);
-      const peakRatio = peakAlert && peakAlert.ratio
-        ? peakAlert.ratio
-        : mes.baseline ? Math.round(mes.peak.value * 10 / mes.baseline) / 10 : null;
-      const ratio = peakRatio ? ` · ${formatDecimal(peakRatio)}x médiane` : '';
-      const peakLabel = mes.rawQuantity ? 'pic brut MES' : 'pic MES';
-      const diagnostic = mes.diagnostic || {};
-      const mainFile = diagnostic.byFile && diagnostic.byFile[0];
-      const mainMethod = diagnostic.byMethod && diagnostic.byMethod[0];
-      const source = mainFile ? ` · source principale : ${shorten(mainFile.label, 32)} (${formatNumber(mainFile.quantity)})` : '';
-      const method = mainMethod ? ` · méthode : ${shorten(mainMethod.label, 28)}` : '';
-      if (alerts.length) return ` · contrôle : ${peakLabel} ${formatNumber(mes.peak.value)} en ${mes.peak.week} à vérifier${ratio}${source}${method}`;
-      return ` · ${peakLabel} : ${formatNumber(mes.peak.value)} en ${mes.peak.week}${source}${method}`;
     }
 
     function drawChartsWhenReady(data) {
@@ -1519,140 +1239,12 @@
       }));
     }
 
-    function renderCombinedAlea(data) {
-      window.currentCombinedAleaData = data || { kpis: {}, rows: [] };
-      setLoading(false);
-      const kpi = window.currentCombinedAleaData.kpis || {};
-      const productionEvents = kpi.productionEvents || 0;
-      const matchedEvents = kpi.matchedEvents || 0;
-      const coverage = productionEvents ? (matchedEvents / productionEvents) * 100 : 0;
-      document.getElementById('combinedAleaScopeLabel').textContent = combinedAleaScopeText_();
-      document.getElementById('combinedProductionEvents').textContent = formatNumber(productionEvents);
-      document.getElementById('combinedMesEvents').textContent = formatNumber(kpi.mesEvents);
-      document.getElementById('combinedMatchedEvents').textContent = formatNumber(matchedEvents);
-      document.getElementById('combinedMatchedNote').textContent = `fortes : ${formatNumber(kpi.strongMatches)} · probables : ${formatNumber(kpi.probableMatches)} · à vérifier : ${formatNumber(kpi.reviewMatches)}`;
-      document.getElementById('combinedCoverage').textContent = `${formatDecimal(coverage)} %`;
-      document.getElementById('combinedCoverageNote').textContent = `${formatNumber(kpi.unmatchedProduction)} production(s) sans MES · ${formatNumber(kpi.unmatchedMes)} MES sans production`;
-      document.getElementById('combinedMesHours').textContent = `${formatDecimal(kpi.mesHours)} h`;
-      document.getElementById('combinedHoursNote').textContent = `Production : ${formatDecimal(kpi.productionHours)} h`;
-      renderCombinedAleaMeta_(kpi);
-      renderCombinedAleaDetails();
-    }
-
-    function combinedAleaScopeText_() {
-      const filters = readFilters();
-      const businessFilters = ['family', 'immo', 'station'].filter(key => hasFilterValue_(filters[key])).length;
-      const period = filters.from && filters.to ? `du ${formatInputDate(filters.from)} au ${formatInputDate(filters.to)}` : 'toute la période';
-      return `TC STR · comparaison Production / MES · ${period}${businessFilters ? ` · ${businessFilters} filtre(s) métier` : ''}`;
-    }
-
-    function renderCombinedAleaMeta_(kpi) {
-      const target = document.getElementById('combinedAleaMeta');
-      const items = [
-        `${formatNumber(kpi.strongMatches)} correspondance(s) forte(s)`,
-        `${formatNumber(kpi.probableMatches)} correspondance(s) probable(s)`,
-        `${formatNumber(kpi.reviewMatches)} cas à vérifier`,
-        `${formatNumber((kpi.unmatchedProduction || 0) + (kpi.unmatchedMes || 0))} événement(s) sans paire`
-      ];
-      target.replaceChildren(...items.map(text => {
-        const item = document.createElement('span');
-        item.textContent = text;
-        return item;
-      }));
-    }
-
-    function renderCombinedAleaDetails() {
-      const target = document.getElementById('combinedAleaDetails');
-      const data = window.currentCombinedAleaData || {};
-      const rows = data.rows || [];
-      const query = normalizeSearch_(document.getElementById('combinedAleaSearch').value);
-      const level = document.getElementById('combinedAleaMatchFilter').value;
-      const matchingRows = rows.filter(row => {
-        const correspondence = row.correspondence || {};
-        const matchesLevel = !level || correspondence.label === level;
-        const matchesQuery = !query || normalizeSearch_(JSON.stringify(row)).includes(query);
-        return matchesLevel && matchesQuery;
-      });
-      if (!matchingRows.length) {
-        target.innerHTML = `<div class="detail-empty">${escapeHtml(data.empty ? (data.message || 'Aucun événement correspondant') : 'Aucun événement correspondant')}</div>`;
-        return;
-      }
-      const summary = document.createElement('p');
-      summary.className = 'panel-subtitle';
-      summary.textContent = `${formatNumber(matchingRows.length)} résultat(s) affiché(s) sur ${formatNumber(rows.length)} rapprochement(s) chargé(s).`;
-      const table = document.createElement('table');
-      table.className = 'detail-table comparison-table';
-      const headers = ['Date', 'Poste', 'IMMO', 'Aléa production', 'Événement MES correspondant', 'Temps perdu MES', 'Correspondance probable', 'Critères'];
-      const head = table.createTHead().insertRow();
-      headers.forEach(label => { const cell = document.createElement('th'); cell.textContent = label; head.appendChild(cell); });
-      const body = table.createTBody();
-      matchingRows.forEach(row => {
-        const line = body.insertRow();
-        line.insertCell().textContent = formatDetailDate_(row.date);
-        line.insertCell().textContent = row.station || '–';
-        line.insertCell().textContent = row.immo || '–';
-        appendCombinedEventCell_(line.insertCell(), row.production);
-        appendCombinedEventCell_(line.insertCell(), row.mes, true);
-        const mesHours = line.insertCell();
-        mesHours.className = 'numeric';
-        mesHours.textContent = comparisonHours_(row.mes && row.mes.downtime);
-        appendCombinedMatchCell_(line.insertCell(), row.correspondence);
-        const reasons = line.insertCell();
-        reasons.className = 'match-reasons';
-        reasons.textContent = row.correspondence && row.correspondence.reasons && row.correspondence.reasons.length
-          ? row.correspondence.reasons.join(' · ')
-          : 'Aucun critère commun';
-      });
-      target.replaceChildren(summary, table);
-    }
-
-    function appendCombinedEventCell_(cell, event, isMes) {
-      cell.className = 'comparison-event';
-      if (!event) {
-        cell.classList.add('missing');
-        cell.textContent = 'Aucun événement correspondant';
-        return;
-      }
-      const problem = document.createElement('strong');
-      problem.textContent = event.problem || 'Défaut non renseigné';
-      const comment = document.createElement('span');
-      comment.textContent = isMes
-        ? cleanCombinedMesComment_(event.comment)
-        : event.comment || 'Commentaire non renseigné';
-      cell.append(problem, comment);
-    }
-
-    function cleanCombinedMesComment_(value) {
-      const cleaned = String(value || '')
-        .replace(/(?:box|vpc)/gi, '')
-        .replace(/\s{2,}/g, ' ')
-        .replace(/\s+([,.;:])/g, '$1')
-        .trim();
-      return cleaned || 'Commentaire non renseigné';
-    }
-
-    function appendCombinedMatchCell_(cell, correspondence) {
-      const match = correspondence || { label: 'Aucune', score: 0 };
-      const badge = document.createElement('span');
-      badge.className = `match-badge ${combinedMatchClass_(match.label)}`;
-      badge.textContent = match.score ? `${match.label} · ${formatNumber(match.score)}/100` : match.label;
-      cell.appendChild(badge);
-    }
-
-    function combinedMatchClass_(label) {
-      return { Forte: 'forte', Probable: 'probable', 'À vérifier': 'review', Aucune: 'none' }[label] || 'none';
-    }
-
-    function comparisonHours_(value) {
-      return value ? `${formatDecimal(value)} h` : '–';
-    }
-
     function renderSourceAnalysis(source, data) {
       window.currentSourceData = window.currentSourceData || {};
       window.currentSourceData[source] = data;
       setLoading(false);
       if (data.options) populateSourceOptions(data.options);
-      const prefix = source === 'ALEA' ? 'alea' : 'nc';
+      const prefix = 'nc';
       const total = source === 'NC' ? (data.kpis.ncCount || data.kpis.total) : data.kpis.total;
       document.getElementById(`${prefix}ScopeLabel`).textContent = sourceScopeText_(source, data.origin);
       document.getElementById(`${prefix}Total`).textContent = formatNumber(total);
@@ -1686,15 +1278,15 @@
     function sourceScopeText_(source, origin) {
       const filters = readFilters();
       const period = filters.from && filters.to ? `du ${formatInputDate(filters.from)} au ${formatInputDate(filters.to)}` : 'toute la période';
-      const labels = source === 'ALEA' ? 'aléas machines de perçage' : 'NC TC avec IMMO, machine ou famille renseignée';
-      const sourceSheet = origin && origin.sourceSheet ? origin.sourceSheet : source === 'ALEA' ? 'Remontées aléas production' : 'Données NC TC';
+      const labels = 'NC TC avec IMMO, machine ou famille renseignée';
+      const sourceSheet = origin && origin.sourceSheet ? origin.sourceSheet : 'Données NC TC';
       const consolidatedSheet = origin && origin.consolidatedSheet ? origin.consolidatedSheet : 'FAITS_IMMO';
       if (origin && origin.directSource) return `Source « ${sourceSheet} » lue directement · TC STR · ${labels} · ${period}`;
       return `Source « ${sourceSheet} » → ${consolidatedSheet} · TC STR · ${labels} · ${period}`;
     }
 
     function sourceChartIds_(prefix) {
-      return [`${prefix}TrendChart`, `${prefix}MachineChart`, `${prefix}FamilyChart`, `${prefix}StationChart`, `${prefix}ProblemChart`, prefix === 'alea' ? 'aleaCategoryChart' : 'ncMsnChart'];
+      return [`${prefix}TrendChart`, `${prefix}MachineChart`, `${prefix}FamilyChart`, `${prefix}StationChart`, `${prefix}ProblemChart`, 'ncMsnChart'];
     }
 
     function renderSourceDetails_(prefix, rows, total, source) {
@@ -1764,7 +1356,7 @@
         }
       }
       const table = document.createElement('table');
-      table.className = `detail-table source-history-table${state.source === 'ALEA' ? ' alea-history-table' : ' nc-history-table'}`;
+      table.className = `detail-table source-history-table nc-history-table`;
       const columns = state.source === 'NC'
         ? [
           ['Date', 'history-date'], ['Famille', 'history-family'], ['IMMO', 'history-immo'], ['Poste / machine source', 'history-station'],
@@ -1858,7 +1450,7 @@
     }, 300);
 
     function drawSourceChartsWhenReady(source, data) {
-      const expectedView = source === 'ALEA' ? 'alea' : 'nc';
+      const expectedView = 'nc';
       if (activeView_() !== expectedView) return;
       requestAnimationFrame(() => requestAnimationFrame(() => {
         if (activeView_() === expectedView) drawSourceCharts(source, data);
@@ -1866,9 +1458,9 @@
     }
 
     function drawSourceCharts(source, data) {
-      const prefix = source === 'ALEA' ? 'alea' : 'nc';
+      const prefix = 'nc';
       const palette = chartColors_();
-      const color = source === 'ALEA' ? palette.alea : palette.nc;
+      const color = palette.nc;
       const common = { backgroundColor: 'transparent', fontName: 'IBM Plex Sans', legend: 'none', animation: { startup: true, duration: 380, easing: 'out' }, chartArea: { left: 75, top: 25, right: 20, bottom: 65 } };
       const typedData = (columns, rows) => {
         const table = new google.visualization.DataTable();
@@ -1912,7 +1504,7 @@
         const trendChart = new google.visualization.LineChart(trendTarget);
         const table = typedData([
           { type: 'string', label: 'Semaine' },
-          { type: 'number', label: source === 'ALEA' ? 'Aléas' : 'NC' }
+          { type: 'number', label: 'NC' }
         ], data.trend.map(item => [String(item[0] || ''), Number(item[1]) || 0]));
         drawChart(trendId, trendChart, table, {
           ...common, width: chartWidth_(trendId), colors: [color], legend: { position: 'top' }, lineWidth: 2, pointSize: 4, hAxis: { slantedText: data.trend.length > 12 }, vAxis: { minValue: 0, gridlines: { color: '#edf0ef' } }
@@ -1925,14 +1517,14 @@
       } else {
         drawBar('aleaStationChart', data.machineTypes, 'Type de machine', 'machineType');
       }
-      drawBar(`${prefix}ProblemChart`, data.problems, source === 'ALEA' ? 'Aléa' : 'Typologie', 'problem');
+      drawBar(`${prefix}ProblemChart`, data.problems, 'Typologie', 'problem');
       const familyId = `${prefix}FamilyChart`;
       const familyTarget = document.getElementById(familyId);
       if (data.families.length) {
         const familyChart = new google.visualization.ComboChart(familyTarget);
         const table = typedData([
           { type: 'string', label: 'Famille' },
-          { type: 'number', label: source === 'ALEA' ? 'Aléas' : 'NC' },
+          { type: 'number', label: 'NC' },
           { type: 'number', label: 'Taux / 1 000 perçages' }
         ], data.families.slice(0, 12).map(item => [
           shorten(item.label, 26),
@@ -1944,8 +1536,7 @@
         });
         bindSourceChartDetails_(familyChart, data.families.slice(0, 12), source, item => ({ dimension: 'family', value: item.label, title: `Famille · ${item.label}` }));
       } else familyTarget.innerHTML = '<div class="detail-empty">Aucune donnée disponible</div>';
-      if (source === 'ALEA') drawDonut('aleaCategoryChart', data.categories, 'Catégorie', 'category', palette.categories);
-      else drawBar('ncMsnChart', data.msns, 'MSN', 'msn');
+      drawBar('ncMsnChart', data.msns, 'MSN', 'msn');
     }
 
     function chartColors_() {
@@ -1989,73 +1580,6 @@
       link.setAttribute('aria-disabled', String(!mes.configured));
       link.textContent = mes.configured ? `Ouvrir ${mes.folderName}` : 'Configurer dans PARAMETRES';
       document.getElementById('importMes').title = mes.configured ? 'Importer maintenant' : 'Créer le dossier de dépôt MES';
-    }
-
-    function renderQualityAudit_(audit) {
-      const target = document.getElementById('dataQualityAudit');
-      const sources = (audit && audit.sources) || [];
-      const master = (audit && audit.master) || {};
-      const rows = sources.map(item => `<tr>
-        <td><strong>${escapeHtml(item.label)}</strong>${item.error ? `<small class="quality-error">${escapeHtml(item.error)}</small>` : ''}</td>
-        <td>${formatNumber(item.rawRows)}<small>${formatNumber(item.rawQuantity)} unité(s)</small></td>
-        <td>${qualityRateText_(item.rates && item.rates.retainedRows)}<small>${formatNumber(item.retainedFacts)} fait(s) généré(s)</small></td>
-        <td>${formatNumber(item.excludedRows)}<small>${formatNumber(item.excludedQuantity)} unité(s)</small></td>
-        <td>${qualityRateText_(item.rates && item.rates.immoProvided)}<small>${formatNumber(item.immoMissing)} absent(s) · ${formatNumber(item.immoUnrecognized)} non résolu(s)${item.retainedWithoutImmo ? ` · ${formatNumber(item.retainedWithoutImmo)} conservée(s) via machine/famille source` : ''}</small></td>
-        <td>${qualityRateText_(item.rates && item.rates.masterMatched)}</td>
-        <td>${qualityRateText_(item.rates && item.rates.familyResolved)}</td>
-        <td>${qualityRateText_(item.rates && item.rates.dateComplete)}</td>
-      </tr>`).join('');
-      target.innerHTML = `<div class="audit-scroll"><table class="audit-table quality-source-table"><thead><tr><th>Source</th><th>Lignes brutes</th><th>Lignes retenues</th><th>Lignes exclues</th><th>IMMO source</th><th>Master PA / Perçage</th><th>Famille résolue</th><th>Date valide</th></tr></thead><tbody>${rows || '<tr><td colspan="8">Aucune source ne correspond aux filtres.</td></tr>'}</tbody></table></div>
-        <div class="definition-box"><strong>Lecture du tableau.</strong> Les ratios affichent toujours le numérateur et le dénominateur. Le master contient ${formatNumber(master.validImmos || 0)} IMMO valides ; ${formatNumber(master.duplicateImmos || 0)} doublon(s) et ${formatNumber(master.invalidImmos || 0)} valeur(s) invalide(s) sont signalés séparément.</div>`;
-    }
-
-    function renderQualityExclusions_(audit) {
-      const target = document.getElementById('qualityExclusions');
-      const groups = [...((audit && audit.sources) || []), ...(((audit && audit.mes) || {}).bySource || [])];
-      const content = groups.map(group => {
-        const exclusions = group.exclusions || [];
-        if (!exclusions.length) return `<div class="quality-exclusion-group"><strong>${escapeHtml(group.label)}</strong><span class="quality-muted">Aucune exclusion</span></div>`;
-        return `<div class="quality-exclusion-group"><strong>${escapeHtml(group.label)}</strong><table class="audit-table"><tbody>${exclusions.map(item => `<tr><td>${escapeHtml(item.label)}</td><td>${formatNumber(item.rows)} ligne(s)</td><td>${formatNumber(item.quantity)} unité(s)</td></tr>`).join('')}</tbody></table></div>`;
-      }).join('');
-      target.innerHTML = content || '<div class="detail-empty">Aucun motif d’exclusion pour ces filtres.</div>';
-    }
-
-    function renderMesQualityAudit_(mes) {
-      const target = document.getElementById('qualityMesAudit');
-      const rows = (mes.bySource || []).map(item => `<tr><td>${escapeHtml(item.label)}</td><td>${formatNumber(item.rawRows)}</td><td>${qualityRateText_(item.rates && item.rates.retainedRows)}</td><td>${formatNumber(item.excludedRows)}</td><td>${qualityRateText_(item.rates && item.rates.immoProvided)}<small>${formatNumber(item.immoMissing)} absent(s) · ${formatNumber(item.immoUnrecognized)} non résolu(s)</small></td></tr>`).join('');
-      const statuses = Object.entries(mes.statusCounts || {}).map(([status, count]) => `<span class="audit-chip">${escapeHtml(status)} : ${formatNumber(count)}</span>`).join('');
-      const methods = (mes.methods || []).map(item => `<span class="audit-chip">${escapeHtml(matchMethodLabel_(item.method))} : ${formatNumber(item.rows)}</span>`).join('');
-      document.getElementById('qualityMesSubtitle').textContent = mes.note || 'Traçabilité des lignes importées avant validation et rapprochement.';
-      target.innerHTML = `<div class="audit-scroll"><table class="audit-table"><thead><tr><th>Flux</th><th>Staging</th><th>Admissibles</th><th>Exclues</th><th>IMMO source</th></tr></thead><tbody>${rows || '<tr><td colspan="5">Aucune ligne STG_MES pour ces filtres.</td></tr>'}</tbody></table></div><div class="audit-methods">${statuses || '<span class="audit-chip">Aucun statut workflow</span>'}</div><div class="audit-methods">${methods || '<span class="audit-chip">Aucune méthode MES</span>'}</div>`;
-    }
-
-    function renderImportQualityAudit_(imports) {
-      const target = document.getElementById('qualityImportAudit');
-      const statuses = Object.entries(imports.statuses || {}).map(([status, count]) => `<span class="audit-chip">${escapeHtml(status)} : ${formatNumber(count)}</span>`).join('');
-      const errors = (imports.errors || []).map(item => `<tr><td>${escapeHtml(item.file || 'Fichier inconnu')}</td><td>${escapeHtml(item.message || 'Erreur sans message')}</td></tr>`).join('');
-      target.innerHTML = `<div class="audit-methods">${statuses || '<span class="audit-chip">Journal vide</span>'}</div>${errors ? `<div class="audit-scroll"><table class="audit-table"><thead><tr><th>Fichier</th><th>Message</th></tr></thead><tbody>${errors}</tbody></table></div>` : '<div class="quality-muted">Aucune erreur enregistrée dans le journal.</div>'}`;
-    }
-
-    function renderMachineRemainder_(machines) {
-      const remainder = machines.slice(10);
-      const toggle = document.getElementById('machineRemainderToggle');
-      const wrapper = document.getElementById('machineRemainder');
-      toggle.hidden = remainder.length === 0;
-      toggle.textContent = remainder.length ? `Afficher les ${formatNumber(remainder.length)} autres IMMO` : '';
-      toggle.setAttribute('aria-expanded', 'false');
-      wrapper.hidden = true;
-      if (!remainder.length) { wrapper.innerHTML = ''; return; }
-      wrapper.innerHTML = `<table><thead><tr><th>Rang</th><th>IMMO</th><th>Famille</th><th>Production</th><th>NC</th><th>MES</th><th>Total</th></tr></thead><tbody>${remainder.map((item, index) => `<tr><td>${index + 11}</td><td>${escapeHtml(item.label)}</td><td>${escapeHtml(item.family || '–')}</td><td>${formatNumber(item.ALEA)}</td><td>${formatNumber(item.NC)}</td><td>${formatNumber(item.ALEA_MES)}</td><td>${formatNumber(item.total)}</td></tr>`).join('')}</tbody></table>`;
-    }
-
-    function toggleMachineRemainder() {
-      const toggle = document.getElementById('machineRemainderToggle');
-      const wrapper = document.getElementById('machineRemainder');
-      const willOpen = wrapper.hidden;
-      wrapper.hidden = !willOpen;
-      toggle.setAttribute('aria-expanded', String(willOpen));
-      const count = Math.max(0, ((window.currentData && window.currentData.machines) || []).length - 10);
-      toggle.textContent = `${willOpen ? 'Masquer' : 'Afficher'} les ${formatNumber(count)} autres IMMO`;
     }
 
     function chartWidth_(id) {
@@ -2228,132 +1752,6 @@
       }
     }
 
-    function drawLegacyCharts_(data) {
-      const palette = chartColors_();
-      const common = {
-        backgroundColor: 'transparent',
-        fontName: 'IBM Plex Sans',
-        chartArea: { left: 56, top: 22, right: 20, bottom: 45 },
-        animation: { startup: true, duration: 380, easing: 'out' },
-        legend: { position: 'top', alignment: 'end', textStyle: { color: '#5b6b7d', fontSize: 11 } },
-        colors: [palette.alea, palette.nc, palette.mes]
-      };
-      const typedData = (columns, rows) => {
-        const table = new google.visualization.DataTable();
-        columns.forEach(column => table.addColumn(column.type, column.label));
-        table.addRows(rows);
-        return table;
-      };
-      const drawChart = (id, chart, table, options) => {
-        try {
-          chart.draw(table, options);
-        } catch (error) {
-          document.getElementById(id).innerHTML = `<div class="error">${escapeHtml(error.message || String(error))}</div>`;
-          return false;
-        }
-        return true;
-      };
-
-      const trendTarget = document.getElementById('trendChart');
-      if (!data.trend.length) {
-        trendTarget.innerHTML = '<div class="detail-empty">Aucune donnée disponible pour cette période</div>';
-      } else {
-        const trendData = typedData([
-          { type: 'string', label: 'Semaine' }, { type: 'number', label: 'Aléas production' },
-          { type: 'number', label: 'NC' }, { type: 'number', label: 'Aléas MES' }
-        ], data.trend.map(row => [String(row[0] || ''), Number(row[1]) || 0, Number(row[2]) || 0, Number(row[3]) || 0]));
-        const trendChart = new google.visualization.LineChart(trendTarget);
-        if (drawChart('trendChart', trendChart, trendData, {
-          ...common, width: chartWidth_('trendChart'), lineWidth: 2, pointSize: 4, chartArea: { left: 56, top: 22, right: 76, bottom: 45 },
-          hAxis: { textStyle: { color: '#637276', fontSize: 10 }, slantedText: data.trend.length > 12 },
-          vAxes: {
-            0: { minValue: 0, title: 'Production / NC', textStyle: { color: '#637276' }, gridlines: { color: '#edf0ef' } },
-            1: { minValue: 0, title: 'MES', textStyle: { color: palette.mes }, gridlines: { color: 'transparent' } }
-          },
-          series: { 2: { targetAxisIndex: 1 } }
-        })) bindChartDetails_(trendChart, data.trend, row => ({ dimension: 'week', value: row[0], title: `Semaine ${row[0]}` }));
-      }
-
-      const topMachines = data.machines.slice(0, 10);
-      const machineTarget = document.getElementById('machineChart');
-      if (!topMachines.length) {
-        machineTarget.innerHTML = '<div class="detail-empty">Aucune donnée disponible</div>';
-      } else {
-        const machineData = typedData([
-          { type: 'string', label: 'IMMO' }, { type: 'number', label: 'Aléas production' },
-          { type: 'number', label: 'NC' }, { type: 'number', label: 'Aléas MES' }
-        ], topMachines.map(item => [shorten(item.label, 24), Number(item.ALEA) || 0, Number(item.NC) || 0, Number(item.ALEA_MES) || 0]));
-        const machineChart = new google.visualization.ColumnChart(machineTarget);
-        if (drawChart('machineChart', machineChart, machineData, {
-          ...common, width: chartWidth_('machineChart'), isStacked: true, chartArea: { left: 45, top: 28, right: 15, bottom: 80 },
-          hAxis: { slantedText: true, slantedTextAngle: 45, textStyle: { color: '#354448', fontSize: 10 } },
-          vAxis: { minValue: 0, title: 'Nombre d’impacts machine', gridlines: { color: '#edf0ef' } }
-        })) bindChartDetails_(machineChart, topMachines, item => ({ dimension: 'immo', value: item.label, title: `IMMO ${item.label}${item.family ? ` · ${item.family}` : ''}` }));
-      }
-
-      const downtimeFamilies = (data.downtimeFamilies || []).filter(item => item.downtime > 0);
-      const downtimeFamilyTarget = document.getElementById('downtimeFamilyChart');
-      if (!downtimeFamilies.length) {
-        downtimeFamilyTarget.innerHTML = '<div class="detail-empty">Aucune heure perdue renseignée</div>';
-      } else {
-        const downtimeFamilyData = typedData([
-          { type: 'string', label: 'Famille' }, { type: 'number', label: 'Heures perdues' }
-        ], downtimeFamilies.map(item => [shorten(item.label, 30), Number(item.downtime) || 0]));
-        const downtimeFamilyChart = new google.visualization.BarChart(downtimeFamilyTarget);
-        if (drawChart('downtimeFamilyChart', downtimeFamilyChart, downtimeFamilyData, {
-          ...common, width: chartWidth_('downtimeFamilyChart'), legend: 'none', chartArea: { left: 140, top: 25, right: 20, bottom: 45 },
-          colors: [palette.downtime], hAxis: { minValue: 0, title: 'Heures', gridlines: { color: '#edf0ef' } }, vAxis: { textStyle: { fontSize: 10 } }
-        })) bindChartDetails_(downtimeFamilyChart, downtimeFamilies, item => ({ dimension: 'family', value: item.label, title: `Temps perdu · ${item.label}` }));
-      }
-
-      const familyTarget = document.getElementById('familyChart');
-      if (!data.families.length) {
-        familyTarget.innerHTML = '<div class="detail-empty">Aucune donnée disponible</div>';
-      } else {
-        const familyData = typedData([
-          { type: 'string', label: 'Famille' }, { type: 'number', label: 'Aléas production' },
-          { type: 'number', label: 'NC' }, { type: 'number', label: 'Aléas MES' },
-          { type: 'number', label: 'Impacts / 1 000 perçages' }
-        ], data.families.map(item => [shorten(item.label, 28), Number(item.ALEA) || 0, Number(item.NC) || 0,
-          Number(item.ALEA_MES) || 0, Number.isFinite(Number(item.impactsPer1000Drillings)) ? Number(item.impactsPer1000Drillings) : null]));
-        const familyChart = new google.visualization.ComboChart(familyTarget);
-        if (drawChart('familyChart', familyChart, familyData, {
-          ...common, width: chartWidth_('familyChart'), isStacked: true, chartArea: { left: 52, top: 34, right: 58, bottom: 105 },
-          seriesType: 'bars', series: { 3: { type: 'line', targetAxisIndex: 1, color: palette.rate, lineWidth: 2, pointSize: 4 } },
-          hAxis: { slantedText: true, slantedTextAngle: 45, textStyle: { color: '#354448', fontSize: 9 } },
-          vAxes: { 0: { minValue: 0, gridlines: { color: '#edf0ef' }, title: 'Impacts' }, 1: { minValue: 0, gridlines: { color: 'transparent' }, title: 'Taux / 1 000' } },
-          legend: { position: 'top', textStyle: { color: '#637276', fontSize: 10 } }
-        })) bindChartDetails_(familyChart, data.families, item => ({ dimension: 'family', value: item.label, title: item.label }));
-      }
-
-      const sourceData = typedData([{ type: 'string', label: 'Source' }, { type: 'number', label: 'Volume' }], data.sources.map(row => [String(row[0] || ''), Number(row[1]) || 0]));
-      const sourceChart = new google.visualization.PieChart(document.getElementById('sourceChart'));
-      if (drawChart('sourceChart', sourceChart, sourceData, {
-        ...common, width: chartWidth_('sourceChart'), pieHole: .58, chartArea: { left: 10, top: 25, right: 10, bottom: 25 },
-        pieSliceText: 'value', pieSliceTextStyle: { color: '#fff', fontSize: 12 }
-      })) bindChartDetails_(sourceChart, data.sources, item => ({ dimension: 'source', value: sourceCode_(item[0]), title: item[0] }));
-
-      const problemData = typedData([
-        { type: 'string', label: 'Problème' }, { type: 'number', label: 'Indice d’impact' }
-      ], data.problems.map(item => [shorten(item.label, 34), Number(item.score) || 0]));
-      const problemChart = new google.visualization.BarChart(document.getElementById('problemChart'));
-      if (drawChart('problemChart', problemChart, problemData, {
-        ...common, width: chartWidth_('problemChart'), legend: 'none', chartArea: { left: 165, top: 15, right: 15, bottom: 35 },
-        colors: [palette.neutral], hAxis: { minValue: 0, title: 'Points d’impact pondérés', gridlines: { color: '#edf0ef' } },
-        vAxis: { direction: -1, title: 'Défaut selon la source', textStyle: { color: '#354448', fontSize: 10 } }
-      })) bindChartDetails_(problemChart, data.problems, item => ({ dimension: 'problem', value: item.label, title: item.label }));
-
-      const downtimeData = typedData([
-        { type: 'string', label: 'Défaut' }, { type: 'number', label: 'Heures perdues' }
-      ], data.downtimeProblems.map(item => [shorten(item.label, 42), Number(item.downtime) || 0]));
-      const downtimeChart = new google.visualization.BarChart(document.getElementById('downtimeChart'));
-      if (drawChart('downtimeChart', downtimeChart, downtimeData, {
-        ...common, width: chartWidth_('downtimeChart'), legend: 'none', chartArea: { left: 210, top: 15, right: 25, bottom: 40 },
-        colors: [palette.downtime], hAxis: { minValue: 0, title: 'Heures', gridlines: { color: '#e5ebf1' } },
-        vAxis: { direction: -1, title: 'Attribut MES', textStyle: { color: '#354448', fontSize: 10 } }
-      })) bindChartDetails_(downtimeChart, data.downtimeProblems, item => ({ dimension: 'problem', value: item.label, title: item.label }));
-    }
-
     function bindChartDetails_(chart, rows, selectionForRow) {
       google.visualization.events.addListener(chart, 'select', () => {
         const selection = chart.getSelection()[0];
@@ -2484,10 +1882,9 @@
       }
       const table = document.createElement('table');
       table.className = 'detail-table';
-      const onlyProductionAleas = rows.length > 0 && rows.every(row => row.source === 'Aléas production');
       const headers = [
         ['Date', 'date'], ['Source', 'source'], ['IMMO', 'immo'], ['Famille', 'family'], ['Poste', 'station'], ['Catégorie', 'category'], ['Défaut', 'problem'], ['N° NC', 'ncNumber'],
-        [onlyProductionAleas ? 'Hypothèse de cause' : 'Commentaire', 'comment'], ['Qté', 'quantity'], ['Nb NC', 'ncCount'], ['Temps perdu', 'downtime'], ['Rapprochement', 'matchMethod']
+        ['Commentaire', 'comment'], ['Qté', 'quantity'], ['Nb NC', 'ncCount'], ['Temps perdu', 'downtime'], ['Rapprochement', 'matchMethod']
       ];
       const head = table.createTHead().insertRow();
       const sort = window.detailSort_ || { key: 'date', direction: 'desc' };
@@ -2529,7 +1926,6 @@
       });
     }
 
-    function sourceCode_(label) { return { 'Aléas production': 'ALEA', 'NC': 'NC', 'Aléas MES': 'ALEA_MES' }[label] || label; }
     function matchMethodLabel_(value) { return { IMMO_SOURCE_EXACT: 'IMMO renseigné dans le champ source', IMMO_EQUIPEMENT_EXACT: 'IMMO issu de l’ID équipement MES', IMMO_SOURCE_NON_RECONNU: 'IMMO source non reconnu', IMMO_COMMENTAIRE_EXACT: 'IMMO exact trouvé dans le commentaire', IMMO_COMMENTAIRE_CORRIGE: 'IMMO corrigé depuis le commentaire', IMMO_COMMENTAIRE_NON_RECONNU: 'IMMO du commentaire non reconnu', IMMO_COMMENTAIRE_A_VERIFIER: 'Plusieurs IMMO dans le commentaire – à vérifier', FAMILLE_EXACTE: 'Famille master exacte', FAMILLE_COMMENTAIRE: 'Famille reconnue dans le commentaire', FAMILLE_COMMENTAIRE_A_VERIFIER: 'Plusieurs familles dans le commentaire – à vérifier', FAMILLE_PARTIELLE: 'Famille proposée – à vérifier', IMMO_HORS_PERIMETRE: 'IMMO master hors périmètre TC', NON_TROUVE: 'Aucun IMMO ou famille identifié', NON_RENSEIGNE: 'Méthode non renseignée' }[value] || value || '–'; }
     function normalizeSearch_(value) { return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase(); }
     function formatDetailDate_(value) { return value ? value.split('-').reverse().join('/') : '–'; }
@@ -2773,10 +2169,6 @@
       count.textContent = String(selected.length);
     }
 
-    function updateStationSummary() {
-      updateMultiSelectSummary_('station');
-    }
-
     function fillSelect(id, values, allLabel, labelForValue) {
       const select = document.getElementById(id);
       const current = select.value;
@@ -2883,10 +2275,6 @@
     }
 
     function showChartMessage(message, className) {
-      if (activeView_() === 'quality') {
-        document.getElementById('dataQualityAudit').innerHTML = `<div class="${className}">${escapeHtml(message)}</div>`;
-        return;
-      }
       document.querySelectorAll('.chart').forEach((chart, index) => {
         chart.innerHTML = index === 0 ? `<div class="${className}">${escapeHtml(message)}</div>` : '';
       });
@@ -2894,22 +2282,6 @@
 
     function formatNumber(value) { return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(value || 0); }
     function formatDecimal(value) { return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(value || 0); }
-    // Schéma de synthèse : compteurs vivants issus de la dernière réponse du Pilotage.
-    function renderOverviewFlow_(data) {
-      const kpis = data.kpis || {};
-      const summary = ((data.review || {}).actionPlanCoverage || {}).summary || {};
-      const set = (id, value) => { const node = document.getElementById(id); if (node) node.textContent = value; };
-      set('flowAleas', formatNumber(kpis.aleas));
-      set('flowMes', formatNumber(kpis.mes));
-      set('flowNc', formatNumber(kpis.nc));
-      set('flowCoverage', `${formatNumber(kpis.masterCoverage)} %`);
-      set('flowToneNone', formatNumber(summary.NON_TRAITEE));
-      set('flowToneRecurring', formatNumber(summary.CLOTUREE_ANCIENNE));
-      set('flowToneOpen', formatNumber(summary.EN_COURS));
-      set('flowToneDone', formatNumber(summary.TERMINEE_RECENTE));
-      set('flowRefresh', data.refreshedAt ? `Données du ${formatDateTime(data.refreshedAt)}` : 'Données : jamais actualisées');
-    }
-
     function renderActionPlanLegend_(coverage) {
       const legend = document.getElementById('actionPlanLegend');
       if (!legend) return;

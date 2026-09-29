@@ -8,7 +8,7 @@ Le projet est une application web Google Apps Script reliée à Google Sheets et
 
 L’interface comporte trois vues :
 
-1. **Synthèse activités** : schéma interactif « Du terrain à la décision » en 4 étapes (terrain, consolidation, analyse, décision MFT), avec les compteurs réels, des liens vers les vues et le raccourci « Préparer la réunion MFT ».
+1. **Synthèse activités** : schéma « Du terrain à la décision » (image SVG) des flux : BDD Immo et Famille, Données NC, BDD Aléas MES → Apps Script → FAITS_IMMO → Pilotage et analyses NC.
 2. **Pilotage** : revue interactive centrée sur la disponibilité UPA/MEDU, la qualité de la donnée MES d’origine, les coûts NC/MES par famille ou IMMO, la ventilation par MSN et le Pareto des défauts. Les graphiques MES et fusionnés se basculent avec le sélecteur **Famille / IMMO**.
 3. **Analyses NC PA** : KPI propres aux NC du périmètre PA, y compris celles sans IMMO identifiées par un nom de machine, un poste ou une indication famille, tendance interactive basée sur le nombre de NC, Pareto IMMO/familles, poste ou machine source, typologie, MSN et historique filtré.
 
@@ -17,12 +17,12 @@ Les périodes courantes du pilotage et des NC lisent `FAITS_IMMO`, limité à un
 ## Architecture des données
 
 ```text
-BDD_Master_amélio ───────┐
-Remontées aléas ─────────┼──> Apps Script ──> FAITS_IMMO ──> Web app
-Données NC PA (historique) ─┤     │             │
-Base MES/NC XLSX manuelle ┘       ├──> CONTROLES
+BDD_Master_amélio ──────────┐
+Données NC PA (historique) ──┼──> Apps Script ──> FAITS_IMMO ──> Web app
+Base MES XLSX manuelle ─────┘     │    (NC + MES)
+(dossier MES A DEPOSER)          ├──> CONTROLES
                                   ├──> FAITS_IMMO_ARCHIVES
-                                  └──> Tables MFT officielles
+Plans MFT (onglets datés) ───────┴──> couleurs du Pilotage, item 2
 ```
 
 Le classeur central recommandé est distinct des classeurs sources. Le script lit les sources, normalise les colonnes et n’écrit pas dans les feuilles métier sources.
@@ -105,7 +105,7 @@ Le menu **Actualiser toutes les données** :
 - importe les nouveaux fichiers MES ;
 - lit les sources configurées et `STG_MES` ; conserve les NC historiques absentes du dernier export MES et fusionne les doublons métier ;
 - normalise les faits et déduplique les événements ;
-- interrompt l’actualisation avant toute réécriture si la source production est vide ou si aucun aléa PA des postes 280/290 n’est consolidé ;
+- interrompt l’actualisation avant toute réécriture si aucun fait NC ou MES n’est consolidé ;
 - archive les faits datés de plus de 24 mois ;
 - réécrit `FAITS_IMMO` et `CONTROLES` ;
 - affiche le nombre de faits actifs, nouvellement archivés et mis à jour dans l’archive.
@@ -119,7 +119,7 @@ Les commandes principales restent directement accessibles dans **Dashboard Machi
 ## Règles métier principales
 
 - Le périmètre est PA/PA STR ; les lignes MES hors périmètre sont exclues selon leurs critères de section et d’objet.
-- Pour les aléas production, les seuls critères d’inclusion sont ceux de la ligne source : colonne `Section` au périmètre PA et colonne `Poste` à 280/290, variantes A/B/C comprises. L’événement reste visible si l’IMMO manque, est inconnu ou appartient à un autre périmètre dans le master ; le master sert uniquement à enrichir et à calculer la couverture. Une NC sans IMMO mais avec un nom de machine, un poste ou une indication famille est conservée dans les volumes, familles, postes et détails ; elle reste exclue du Pareto IMMO et de la couverture master. Une ligne NC sans aucune identité exploitable reste visible dans l’audit des sources, mais n’alimente pas les analyses.
+- Les remontées aléas production (Waterspiders, feuille `Remontées aléas production`) ne sont plus consolidées : `FAITS_IMMO` ne contient que les NC et les aléas MES. Les anciens aléas production présents dans les faits ou l’archive sont ignorés à la lecture. Une NC sans IMMO mais avec un nom de machine, un poste ou une indication famille est conservée dans les volumes, familles, postes et détails ; elle reste exclue du Pareto IMMO et de la couverture master.
 - Les faits non rapprochés restent visibles dans les KPI, défauts et contrôles qualité. Le pilotage affiche la couverture famille, IMMO, MSN et durée des aléas MES afin que les données incomplètes ne disparaissent pas de la lecture métier.
 - Un IMMO absent de la source et un IMMO fourni mais non résolu sont comptés séparément. Une famille héritée du master est résolue pour l’analyse, mais ne masque pas l’absence de famille dans la source.
 - La revue valorise une NC à `250 €` en moyenne selon le scénario Business Case 2026 et une heure d’indisponibilité UPA/MEDU issue de MES à `110 €`. Ces hypothèses sont affichées dans l’interface et ne remplacent pas un coût comptable.
@@ -214,7 +214,6 @@ Les clés sont dans `PARAMETRES` et les valeurs par défaut sont centralisées d
 | Clé | Rôle |
 | --- | --- |
 | `ID_FICHIER_MASTER` | Classeur contenant `BDD_Master_amélio` |
-| `ID_FICHIER_ALEAS` | Classeur contenant `Remontées aléas production` |
 | `ID_FICHIER_NC` | Classeur contenant `Données NC PA` et ses IMMO/postes d’enrichissement |
 | `ID_FICHIER_PLANNING_MSN` | Référentiel d’activité MSN |
 | `ID_FICHIER_TAUX_PERCAGE` | TCD des perçages par famille |

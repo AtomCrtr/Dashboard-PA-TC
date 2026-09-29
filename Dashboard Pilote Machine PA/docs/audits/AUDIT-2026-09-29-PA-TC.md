@@ -19,10 +19,11 @@ Légende des statuts : ✅ corrigé dans cette livraison · 🟡 corrigé en par
 | P1 | Tests | Les deux suites échouaient dès la première assertion (tests TC recopiés du PA) | ✅ Suites réalignées et étendues (couleurs, filtres, cache, sécurité) |
 | P1 | Réseau | Script d’icônes chargé depuis `unpkg.com` (hors Google, CDN public) | ✅ Icônes intégrées ; seules restent Google Charts et Google Fonts (domaines Google) |
 | P2 | Code | ~550 lignes d’écart entre `Code.gs` PA et TC pour une logique à 90 % commune ; libellés « PA » restés dans le code TC | 🟡 Libellés corrigés ; mutualisation à planifier |
-| P2 | Code | Vues et fonctions mortes : vues `viewQuality` et `viewCombinedAlea` sans bouton d’accès, `loadDataQuality`, `loadCombinedAlea`, `drawLegacyCharts_`, `getMftAgenda` jamais appelés, grille masquée `#dashboard` | ⬜ À supprimer après validation métier |
+| P2 | Code | Vues et fonctions mortes : vues `viewQuality` et `viewCombinedAlea` sans bouton d’accès, grille masquée `#dashboard`, fonctions jamais appelées | ✅ Supprimées : 24 fonctions d’interface, ~60 fonctions serveur par dossier (audit qualité des sources, rapprochement combiné, écriture MFT inutilisée), 70 règles CSS |
 | P2 | Données | 35 à 67 % des actions MFT sans IMMO ni famille lisible : ces machines apparaissent « aucune action » à tort | ⬜ Colonnes IMMO/Famille dans les plans (voir analyse des plans) |
 | P2 | Performance | Chaque calcul non mis en cache relit toute la feuille `FAITS_IMMO` (et l’archive pour « Tout ») | ⬜ Voir § 4 |
 | P3 | Interface | Page « Analyses Aléas » redondante avec le Pilotage | ✅ Supprimée en PA et en TC (interface et serveur) |
+| P2 | Données | Source Waterspiders (`Remontées aléas production`) plus utilisée mais obligatoire à l’actualisation (arrêt si vide) | ✅ Retirée du circuit : actualisation NC + MES seulement, garde-fou « aucun fait », anciens aléas production ignorés à la lecture |
 
 ## 2. Sécurité et droits
 
@@ -77,10 +78,7 @@ Le déclencheur de préchauffage toutes les 30 min devient optionnel : le préch
 ## 5. Qualité du code
 
 - **Duplication PA / TC.** Même architecture, mais 549 lignes d’écart dans `Code.gs`. Les tests TC étaient une copie du PA et échouaient. Les libellés « hors périmètre PA » étaient restés dans le code TC (corrigés). ⬜ Recommandation : une bibliothèque Apps Script commune et un `Config.gs` par périmètre (sections, postes, sources, coûts, plans MFT).
-- **Code mort.** ⬜ À supprimer après validation :
-  - vues `viewQuality` et `viewCombinedAlea`, avec leurs fonctions `loadDataQuality`, `loadCombinedAlea`, `renderCombinedAlea*` et `getCombinedAleaAnalysisData` ;
-  - `drawLegacyCharts_` et la grille masquée `#dashboard`, qui héberge encore des éléments KPI lus par `renderDashboard` : à déplacer avant suppression ;
-  - `getMftAgenda`.
+- **Code mort.** ✅ Supprimé en cascade (toute fonction qui n’est plus appelée par l’interface, un menu, un déclencheur ou une autre fonction) : vues `viewQuality` et `viewCombinedAlea`, grille masquée `#dashboard` et ses KPI, audit qualité des sources, rapprochement Production / MES, écriture MFT (`saveMftAction`, `deleteMftAction`) sans page associée, diagnostic des dates d’aléas production. Volume total : 17 391 → 13 804 lignes pour PA + TC (scripts et interface). Seule `validatedMesPreNcRows_` est conservée pour la future intégration des NC validées.
 - **Corrections fonctionnelles de cette série.**
   - Famille citée dans un commentaire : le jeton le plus précis l’emporte.
   - Durées Sheets arrondies à la seconde.
@@ -121,11 +119,7 @@ Détail dans [ANALYSE-PLANS-ACTIONS-2026-09-29.md](ANALYSE-PLANS-ACTIONS-2026-09
 - ✅ Filtre « Suivi plan d’actions ». Le raccourci **À traiter en MFT** sélectionne le violet et l’orange.
 - ✅ Clic sur une barre : les actions MFT liées s’affichent (réf., statut, échéance, clôture, responsable, plan), avec le bouton « Filtrer tout le tableau de bord sur … ».
 - ✅ Animations d’apparition des graphiques et info-bulles indiquant le statut du plan.
-- ✅ Schéma « Du terrain à la décision » refait :
-  - 4 étapes avec des compteurs issus des données réelles ;
-  - liens vers les vues ;
-  - bouton **Préparer la réunion MFT** ;
-  - mise en page adaptée au mobile.
+- ✅ Schéma « Du terrain à la décision » conservé en image SVG ; la source Waterspiders (aléas production) en est retirée.
 - ✅ Filtres Poste / Famille / IMMO / MSN en listes déroulantes à cases, avec les variantes de poste regroupées.
 - ⬜ Rendre les barres des graphiques atteignables au clavier (Google Charts ne le fait pas nativement). Piste : tableau de données accessible sous chaque graphique.
 - ⬜ Harmoniser le style du sélecteur « Origine des données » avec les nouvelles listes.
