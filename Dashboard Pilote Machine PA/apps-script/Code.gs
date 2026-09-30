@@ -392,7 +392,7 @@ function getDashboardData(filters, publishedOnly) {
   const cached = publishedOnly
     ? readAnalyticsCache_(analyticsCacheKey_('dashboard', requested)) || readAnalyticsCache_(cacheKey)
     : readAnalyticsCache_(cacheKey);
-  if (cached) return withReviewActionPlanCoverage_(withDirectNcReviewCosts_(cached, requested));
+  if (cached) return withReviewActionPlanCoverage_(cached);
   const spreadsheet = SpreadsheetApp.getActive();
   const factData = readFactsForAnalysis_(requested);
   if (!factData.values.length) {
@@ -403,6 +403,7 @@ function getDashboardData(filters, publishedOnly) {
   const index = Object.fromEntries(headers.map((header, position) => [header, position]));
   const options = collectFilterOptions_(values, index);
   const filtered = values.filter(row => matchesFilters_(row, index, requested));
+  const costRules = reviewCostRules_();
   const mesEvidence = buildMesEvidenceQuality_(readStagedMes_(), requested);
   const trendFilters = Object.assign({}, trendWindow_(), requested);
   trendFilters.trendLabel = requested.from || requested.to ? 'période filtrée' : trendFilters.trendLabel;
@@ -490,7 +491,7 @@ function getDashboardData(filters, publishedOnly) {
       if (msn) availabilityQuality.msn += 1;
       if (downtime > 0) availabilityQuality.downtime += 1;
       if (family) addAggregate_(availabilityFamilies, family, source, quantity, score, downtime);
-      const mesCost = downtime * 100;
+      const mesCost = reviewFactCost_(row, index, costRules);
       if (isUsableCostFamily_(family)) {
         addCostAggregate_(mesCostFamilies, family, mesCost, source);
         addCostAggregate_(combinedCostFamilies, family, mesCost, source);
@@ -502,7 +503,7 @@ function getDashboardData(filters, publishedOnly) {
       if (msn) addCostAggregate_(costMsns, msn, mesCost, source);
     }
     if (source === 'NC') {
-      const ncCost = quantity * 300;
+      const ncCost = reviewFactCost_(row, index, costRules);
       ncQuality.total += 1;
       if (immo) ncQuality.immo += 1;
       if (family) ncQuality.family += 1;
@@ -591,7 +592,7 @@ function getDashboardData(filters, publishedOnly) {
     downtimeMachines: topAggregates_(machines, 10, 'downtime'),
     downtimeFamilies: downtimeFamilyResults,
     review: {
-      assumptions: { ncUnitCost: 300, unavailableHourlyCost: 100 },
+      assumptions: { ncUnitCost: costRules.ncUnitCost, unavailableHourlyCost: costRules.hourlyCost },
       availability: {
         kpis: {
           events: mesEvidence.events,
@@ -628,7 +629,7 @@ function getDashboardData(filters, publishedOnly) {
     sources: [['Aléas production', sources.ALEA || 0], ['NC', sources.NC || 0], ['Aléas MES', sources.ALEA_MES || 0]]
       .sort((left, right) => right[1] - left[1])
   };
-  return withReviewActionPlanCoverage_(withDirectNcReviewCosts_(cacheAnalyticsResponse_(cacheKey, result), requested));
+  return withReviewActionPlanCoverage_(cacheAnalyticsResponse_(cacheKey, result));
 }
 
 function searchSourceAnalysisDetails(source, filters, query, requestedLimit) {
@@ -974,9 +975,13 @@ function getDashboardDetails(filters, selection) {
     .filter(row => matchesFilters_(row, index, filters || {}))
     .filter(row => matchesDetailSelection_(row, index, selected))
     .sort((left, right) => dateSortValue_(right[index.DATE]) - dateSortValue_(left[index.DATE]));
+  const costRules = reviewCostRules_();
   const result = {
     total: matching.length,
+    totalQuantity: matching.reduce((sum, row) => sum + factQuantity_(row, index), 0),
+    totalCost: matching.reduce((sum, row) => sum + reviewFactCost_(row, index, costRules), 0),
     rows: matching.slice(0, 500).map(row => ({
+      cost: reviewFactCost_(row, index, costRules),
       date: dateKey_(row[index.DATE]),
       source: sourceLabel_(row[index.SOURCE]),
       immo: clean_(row[index.IMMO]),
@@ -2424,83 +2429,6 @@ function addAggregate_(target, label, source, quantity, score, downtime) {
   target[label].downtime += numberOr_(downtime, 0);
 }
 
-function withDirectNcReviewCosts_(data, filters) {
-  if (!data || data.empty || !data.review || !data.review.costs) return data;
-  try {
-    const direct = readDirectNcCostAggregates_(filters);
-    if (!direct.available) return data;
-    const costs = data.review.costs;
-    const mesFamilies = costs.mesFamilyTotals || costs.mesFamilies || [];
-    const mesMachines = costs.mesMachineTotals || costs.unavailableMachines || [];
-    const combinedFamilies = mergeCostRows_(direct.families, mesFamilies);
-    const combinedMachines = mergeCostRows_(direct.machines, mesMachines);
-    const review = Object.assign({}, data.review, {
-      directNc: { available: true, refreshedAt: direct.refreshedAt },
-      costs: Object.assign({}, costs, {
-        ncFamilies: topCostRows_(direct.families, 12),
-        ncMachines: topCostRows_(direct.machines, 12),
-        combinedFamilies: topCostRows_(combinedFamilies, 12),
-        combinedFamilyTotals: combinedFamilies,
-        combinedMachines: topCostRows_(combinedMachines, 12)
-      })
-    });
-    return Object.assign({}, data, { review });
-  } catch (error) {
-    return Object.assign({}, data, { review: Object.assign({}, data.review, {
-      directNc: { available: false, error: error.message || String(error) }
-    }) });
-  }
-}
-
-function readDirectNcCostAggregates_(filters) {
-  if (filters && filters.source && filters.source !== 'NC') return { available: true, families: [], machines: [], refreshedAt: '' };
-  const parameters = getParameters_();
-  const spreadsheetId = clean_(parameters.ID_FICHIER_NC);
-  if (!spreadsheetId) return { available: false, families: [], machines: [], refreshedAt: '' };
-  const cache = typeof CacheService !== 'undefined' ? CacheService.getScriptCache() : null;
-  const cacheKey = `pa-direct-nc-${digest_(`${spreadsheetId}|${stableStringify_(filters || {})}`)}`;
-  const cached = cache ? readJsonCache_(cache, cacheKey, 'coûts NC directs') : null;
-  if (cached) return cached;
-  const masterRows = readRecords_(parameters.ID_FICHIER_MASTER, APP.sourceSheets.master);
-  const master = enrichMasterWithDocMartin_(buildMasterIndex_(masterRows), readDocMartinEquipmentRecords_(parameters));
-  const records = readRecords_(spreadsheetId, APP.sourceSheets.nc);
-  const facts = [];
-  appendFacts_(facts, records, 'NC', APP.aliases.nc, master, parameters, APP.sourceSheets.nc);
-  const index = Object.fromEntries(APP.factsHeaders.map((header, position) => [header, position]));
-  const requested = Object.assign({}, filters || {}, { source: 'NC' });
-  const families = {};
-  const machines = {};
-  facts.filter(row => matchesFilters_(row, index, requested)).forEach(row => {
-    const quantity = factQuantity_(row, index);
-    const cost = quantity * 300;
-    const family = clean_(row[index.FAMILLE]);
-    const immo = clean_(row[index.IMMO]);
-    if (isUsableCostFamily_(family)) addCostAggregate_(families, family, cost, 'NC');
-    if (immo) addCostAggregate_(machines, immo, cost, 'NC', family);
-  });
-  const result = { available: true, families: Object.values(families), machines: Object.values(machines), refreshedAt: new Date().toISOString() };
-  // 30 min (et non 60 s) : la lecture directe NC relit le master, Doc&Martin et la source NC.
-  if (cache) writeJsonCache_(cache, cacheKey, result, 1800, 'coûts NC directs');
-  return result;
-}
-
-function mergeCostRows_(leftRows, rightRows) {
-  const merged = {};
-  [...(leftRows || []), ...(rightRows || [])].forEach(row => {
-    if (!row || !row.label) return;
-    const target = merged[row.label] || (merged[row.label] = { label: row.label, family: row.family || '', NC: 0, ALEA_MES: 0, cost: 0 });
-    if (!target.family && row.family) target.family = row.family;
-    target.NC += numberOr_(row.NC, 0);
-    target.ALEA_MES += numberOr_(row.ALEA_MES, 0);
-    target.cost += numberOr_(row.cost, 0);
-  });
-  return Object.values(merged);
-}
-
-function topCostRows_(rows, limit) {
-  return (rows || []).slice().sort((left, right) => right.cost - left.cost || String(left.label).localeCompare(String(right.label))).slice(0, limit);
-}
-
 function withReviewActionPlanCoverage_(data) {
   if (!data || data.empty || !data.review || !data.review.costs) return data;
   const coverage = readActionPlanCoverage_();
@@ -2901,6 +2829,43 @@ function actionPlanActionsForKey_(label, dimension, coverage, limit) {
     .slice(0, limit || 6);
 }
 
+// Coût d'un fait dans la revue (barres de l'item 2, MSN, détail au clic) :
+// - aléa MES : heures d'indisponibilité × COUT_HEURE_PERDUE_EUR ;
+// - NC : coût calculé à la consolidation (scénario Business Case ou COUT_MOYEN_NC_EUR),
+//   s'il est non nul, sinon coût moyen NC configuré, sinon 300 € par NC (valeur historique de la revue).
+// Le même calcul sert aux graphiques et au panneau de détail pour que les totaux concordent.
+const REVIEW_DEFAULT_NC_COST = 300;
+
+function reviewCostRules_() {
+  let parameters = {};
+  try {
+    parameters = getParameters_();
+  } catch (error) {
+    parameters = {};
+  }
+  const read = key => {
+    const value = clean_(parameters[key] !== undefined ? parameters[key] : APP.parameterDefaults[key]);
+    return value === '' ? null : numberOr_(value, null);
+  };
+  const hourlyCost = read('COUT_HEURE_PERDUE_EUR');
+  const ncUnitCost = read('COUT_MOYEN_NC_EUR');
+  return {
+    hourlyCost: hourlyCost === null ? 100 : hourlyCost,
+    ncUnitCost: ncUnitCost === null ? REVIEW_DEFAULT_NC_COST : ncUnitCost
+  };
+}
+
+function reviewFactCost_(row, index, rules) {
+  const source = clean_(row[index.SOURCE]);
+  if (source === 'ALEA_MES') return Math.max(0, numberOr_(row[index.TEMPS_PERDU_HEURES], 0)) * rules.hourlyCost;
+  if (source !== 'NC') return 0;
+  const known = row[index.COUT_RENSEIGNE] === true || String(row[index.COUT_RENSEIGNE]).toUpperCase() === 'OUI';
+  const stored = numberOr_(row[index.COUT_TOTAL_EUR], NaN);
+  // Un coût stocké nul (ex. TC : seul le temps perdu est valorisé) ne représente pas la NC elle-même.
+  if (known && Number.isFinite(stored) && stored > 0) return stored;
+  return factQuantity_(row, index) * rules.ncUnitCost;
+}
+
 function isUsableCostFamily_(label) {
   const normalized = normalizeHeader_(label);
   return Boolean(normalized) && !['FAMILLENONRENSEIGNEE', 'FAMILLEINCONNUE', 'NONRENSEIGNE', 'NONRENSEIGNEE', 'SANSFAMILLE'].includes(normalized);
@@ -3138,7 +3103,7 @@ function getCachedReferenceValues_(spreadsheetId, cachePrefix) {
 }
 
 function analyticsCacheKey_(kind, payload) {
-  const version = `v7-mft-latest-family-labels-${PropertiesService.getScriptProperties().getProperty('ANALYTICS_CACHE_VERSION') || '0'}`;
+  const version = `v8-couts-revue-unifies-${PropertiesService.getScriptProperties().getProperty('ANALYTICS_CACHE_VERSION') || '0'}`;
   return `analytics-${kind}-${version}-${digest_(stableStringify_(payload || {}))}`;
 }
 

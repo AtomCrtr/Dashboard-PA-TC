@@ -637,7 +637,7 @@ assert.ok(html.includes('data-view="overview"'));
 assert.ok(html.includes('data-view="dashboard"'));
 assert.ok(!html.includes('data-view="quality"'));
 assert.ok(!html.includes('data-view="combinedAlea"'));
-assert.ok(html.includes('NC selon les données disponibles · MES à 116 €/h d’indisponibilité'));
+assert.ok(html.includes('NC : coût saisi, sinon 300 € par NC · MES à 116 €/h d’indisponibilité'));
 assert.ok(html.includes('id="msnPicker"'));
 assert.ok(html.includes('id="familyPicker"'));
 assert.ok(html.includes('id="immoPicker"'));
@@ -1379,3 +1379,21 @@ const factsWithoutProduction = evaluate(`(() => {
 assert.deepEqual(factsWithoutProduction, ['NC', 'ALEA_MES']);
 assert.ok(!sources[1].includes('ID_FICHIER_ALEAS, APP.sourceSheets.aleas'));
 console.log('OK — sources NC / MES uniquement.');
+
+// Coûts de la revue : même règle pour les barres et le détail (plus de 300 € / 100 €/h codés en dur).
+const unifiedReviewCosts = evaluate(`(() => {
+  const index = Object.fromEntries(APP.factsHeaders.map((header, position) => [header, position]));
+  const row = values => APP.factsHeaders.map(header => Object.prototype.hasOwnProperty.call(values, header) ? values[header] : '');
+  const rules = { hourlyCost: 110, ncUnitCost: 300 };
+  return [
+    reviewFactCost_(row({ SOURCE: 'ALEA_MES', TEMPS_PERDU_HEURES: 2 }), index, rules),
+    reviewFactCost_(row({ SOURCE: 'NC', QUANTITE: 1, COUT_RENSEIGNE: 'OUI', COUT_TOTAL_EUR: 250 }), index, rules),
+    reviewFactCost_(row({ SOURCE: 'NC', QUANTITE: 2, COUT_RENSEIGNE: 'OUI', COUT_TOTAL_EUR: 0 }), index, rules),
+    reviewFactCost_(row({ SOURCE: 'NC', QUANTITE: 1, COUT_RENSEIGNE: 'NON', COUT_TOTAL_EUR: '' }), index, rules)
+  ];
+})()`);
+assert.deepEqual(unifiedReviewCosts, [220, 250, 600, 300]);
+assert.ok(!sources[1].includes('quantity * 300'));
+assert.ok(!sources[1].includes('downtime * 100'));
+assert.ok(!sources[1].includes('function readDirectNcCostAggregates_'));
+console.log('OK — coûts de revue unifiés.');

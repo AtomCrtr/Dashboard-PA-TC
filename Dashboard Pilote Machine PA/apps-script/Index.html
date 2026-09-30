@@ -254,6 +254,9 @@
     .panel-title { margin: 0 0 4px; font: 700 14px Manrope, sans-serif; }
     .panel-subtitle { margin: 0; color: var(--muted); font-size: 12px; }
     .chart { width: 100%; height: 310px; margin-top: 8px; }
+    /* Un contenu large (graphique à défilement horizontal, tableau) ne doit jamais élargir la page : défilement dans le panneau. */
+    .shell > *, .workspace > *, .dashboard-grid > *, .kpis > * { min-width: 0; }
+    .panel { overflow-x: auto; }
     .chart.tall { height: 370px; }
     .primary { padding: 0 18px; height: 44px; }
     @media print {
@@ -293,7 +296,7 @@
       width: min(1440px, 94vw);
       height: 90vh;
       display: grid;
-      grid-template-rows: auto auto minmax(0, 1fr);
+      grid-template-rows: auto auto auto minmax(0, 1fr);
       background: #fff;
       border: 1px solid #d7e0e8;
       border-radius: 12px;
@@ -311,6 +314,10 @@
     .detail-header p { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
     .detail-close { flex: 0 0 44px; height: 44px; border: 1px solid var(--line); border-radius: 4px; background: #fff; color: var(--ink); display: grid; place-items: center; }
     .detail-close svg { width: 18px; }
+    .detail-header { grid-row: 1; }
+    .detail-actions { grid-row: 2; }
+    .detail-tools { grid-row: 3; }
+    .detail-table-wrap { grid-row: 4; min-height: 0; }
     .detail-tools { padding: 12px 22px; background: #f6f9fc; border-bottom: 1px solid var(--line); }
     .detail-search { width: 100%; height: 44px; border: 1px solid #c4d0dc; border-radius: 4px; padding: 0 11px; color: var(--ink); background: #fff; }
     .detail-table-wrap { overflow: auto; }
@@ -322,6 +329,7 @@
     .detail-table td { padding: 10px 12px; border-bottom: 1px solid #e5ebf1; vertical-align: top; line-height: 1.35; }
     .detail-table tr:hover td { background: #eef7fb; }
     .detail-table .numeric { text-align: right; white-space: nowrap; }
+    .detail-table th.numeric .detail-sort { justify-content: flex-end; width: 100%; }
     .detail-table td:nth-child(2) { min-width: 98px; }
     .detail-table td:nth-child(4) { min-width: 110px; }
     .detail-table td:nth-child(9) { min-width: 180px; max-width: 340px; }
@@ -565,7 +573,7 @@
     .action-legend .tone-unknown { background: var(--tone-unknown); }
     .action-legend b { color: var(--ink); font-variant-numeric: tabular-nums; }
     .action-legend .legend-title { color: var(--ink); font-weight: 600; }
-    .detail-actions { margin: 0 20px 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; }
+    .detail-actions { max-height: 32vh; overflow: auto; margin: 12px 22px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; }
     .detail-actions-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; }
     .detail-action-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
     .detail-action-list li { padding: 8px 10px; border: 1px solid var(--line); border-left: 4px solid var(--tone-unknown); border-radius: 7px; background: #fff; }
@@ -579,6 +587,9 @@
     .detail-actions-head .multi-select-swatch { width: 12px; height: 12px; border-radius: 3px; flex: none; }
     .review-source-switch { grid-template-columns: repeat(3, minmax(0, 1fr)); width: min(420px, 100%); }
     .review-nc-kpis { grid-template-columns: repeat(3, minmax(150px, 1fr)); max-width: 75%; }
+    @media (max-width: 1180px) { .review-nc-kpis { max-width: none; } }
+    @media (max-width: 860px) { .review-nc-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 480px) { .review-nc-kpis { grid-template-columns: minmax(0, 1fr); } }
     .review-rule { display: inline-flex; align-items: center; gap: 7px; margin-top: 8px; color: var(--muted); font-size: 12px; }
     .review-rule strong { color: var(--ink-strong); }
     #viewOverview .dashboard-grid { margin-top: 0; }
@@ -1015,7 +1026,12 @@
 
     function restoreFiltersPanelState_() {
       let collapsed = false;
-      try { collapsed = localStorage.getItem('dashboard-filters-collapsed') === 'true'; } catch (_error) {}
+      // Sans préférence mémorisée, les filtres sont repliés sur mobile pour afficher d’abord les indicateurs.
+      collapsed = window.matchMedia('(max-width: 860px)').matches;
+      try {
+        const saved = localStorage.getItem('dashboard-filters-collapsed');
+        if (saved !== null) collapsed = saved === 'true';
+      } catch (_error) {}
       setFiltersPanelCollapsed_(collapsed, false);
     }
 
@@ -1610,6 +1626,11 @@
         INCONNU: { color: '#a7b0b1', label: 'suivi indisponible' }
       };
       const actionPlanBarColor = status => (actionPlanTones[status] || actionPlanTones.INCONNU).color;
+      // Contour foncé pour les teintes claires (orange pastel, gris) : contraste ≥ 3:1 avec le fond.
+      const actionPlanBarStyle = status => {
+        const outline = { CLOTUREE_ANCIENNE: '#b9793f', INCONNU: '#7d8789' }[status];
+        return `color: ${actionPlanBarColor(status)}${outline ? `; stroke-color: ${outline}; stroke-width: 1.5` : ''}`;
+      };
       const actionPlanTooltip = (item, valueText) => item.actionPlanStatus
         ? `${item.label}\n${valueText}\nPlan d’actions : ${(actionPlanTones[item.actionPlanStatus] || actionPlanTones.INCONNU).label}`
         : `${item.label}\n${valueText}`;
@@ -1653,7 +1674,7 @@
         ], visibleRows.map(item => [
           shorten(String(item.label), 38),
           Number(item[valueKey]) || 0,
-          `color: ${item.actionPlanStatus ? actionPlanBarColor(item.actionPlanStatus) : color}`,
+          item.actionPlanStatus ? actionPlanBarStyle(item.actionPlanStatus) : `color: ${color}`,
           actionPlanTooltip(item, valueKey === 'cost' ? formatCurrency(item[valueKey]) : `${formatDecimal(item[valueKey])} h`)
         ]));
         const chart = new google.visualization.ColumnChart(target);
@@ -1678,7 +1699,7 @@
         ], visibleRows.map(item => [
           immoChartLabel(item),
           Number(item.cost) || 0,
-          `color: ${actionPlanBarColor(item.actionPlanStatus)}`,
+          actionPlanBarStyle(item.actionPlanStatus),
           actionPlanTooltip(item, formatCurrency(item.cost))
         ]));
         const chart = new google.visualization.BarChart(document.getElementById(id));
@@ -1695,14 +1716,16 @@
       drawColumns('reviewAvailabilityFamilyChart', availability.families, 'Famille', 'downtime', palette.downtime,
         item => ({ dimension: 'family', value: item.label, title: `Disponibilité · ${item.label}` }), 'ALEA_MES');
       const reviewSource = window.reviewCostSource_ || 'NC';
+      const assumptions = review.assumptions || {};
+      const hourlyCostLabel = `${formatNumber(assumptions.unavailableHourlyCost || 0)} €/h`;
       const reviewCostConfig = reviewSource === 'ALEA_MES'
-        ? { label: 'MES', familyRows: costs.mesFamilies, immoRows: costs.unavailableMachines, color: palette.mes, source: 'ALEA_MES', immoSubtitle: 'IMMO cité dans MES · heures d’indisponibilité × 110 €' }
+        ? { label: 'MES', familyRows: costs.mesFamilies, immoRows: costs.unavailableMachines, color: palette.mes, source: 'ALEA_MES', immoSubtitle: `IMMO cité dans MES · heures d’indisponibilité × ${hourlyCostLabel}` }
         : reviewSource === 'COMBINED'
           ? { label: 'NC + MES', familyRows: costs.combinedFamilies, immoRows: costs.combinedMachines, color: palette.teal, source: '', immoSubtitle: 'Lecture fusionnée sur les IMMO renseignés ou cités' }
           : { label: 'NC', familyRows: costs.ncFamilies, immoRows: costs.ncMachines, color: palette.nc, source: 'NC', immoSubtitle: 'NC dont le scénario Business Case est renseigné' };
       document.getElementById('reviewFamilyCostTitle').textContent = `Coût des ${reviewCostConfig.label} par famille`;
       document.getElementById('reviewFamilyCostSubtitle').textContent = reviewSource === 'ALEA_MES'
-        ? 'Heures d’indisponibilité MES × 110 €'
+        ? `Heures d’indisponibilité MES × ${hourlyCostLabel}`
         : reviewSource === 'COMBINED' ? 'Lecture fusionnée des deux sources par famille' : 'Axe X = famille · axe Y = coût estimé en euros';
       document.getElementById('reviewFamilyCostSubtitle').textContent += ` · ${actionTrackingHint}`;
       document.getElementById('reviewImmoCostTitle').textContent = `Coût des ${reviewCostConfig.label} par IMMO`;
@@ -1825,13 +1848,15 @@
       document.getElementById('detailDrawer').setAttribute('aria-hidden', 'false');
       document.getElementById('detailTitle').textContent = selection.title;
       document.getElementById('detailSummary').textContent = 'Chargement des événements…';
+      window.currentDetailTotals_ = null;
       document.getElementById('detailSearch').value = '';
       window.detailSort_ = { key: 'date', direction: 'desc' };
       document.getElementById('detailTableWrap').innerHTML = '<div class="detail-empty loading">Chargement</div>';
       google.script.run
         .withSuccessHandler(result => {
           window.currentDetailRows = result.rows || [];
-          document.getElementById('detailSummary').textContent = `${formatNumber(result.total)} événement(s)${result.total > result.rows.length ? ` · ${formatNumber(result.rows.length)} affichés` : ''}`;
+          window.currentDetailTotals_ = result;
+          document.getElementById('detailSummary').textContent = detailSummaryText_(result, null);
           renderDetailRows();
         })
         .withFailureHandler(error => {
@@ -1861,9 +1886,24 @@
       return detailSearchCache_.get(row);
     }
 
+    // Même périmètre et même règle de coût que la barre cliquée : le total affiché ici doit
+    // correspondre à la valeur du graphique (coût estimé ou nombre d'événements).
+    function detailSummaryText_(result, visibleRows) {
+      const parts = [`${formatNumber(result.total)} événement(s)`];
+      if (Number.isFinite(Number(result.totalQuantity)) && result.totalQuantity !== result.total) parts.push(`${formatNumber(result.totalQuantity)} unité(s)`);
+      if (Number(result.totalCost) > 0) parts.push(`coût estimé ${formatCurrency(result.totalCost)}`);
+      if (result.total > (result.rows || []).length) parts.push(`${formatNumber((result.rows || []).length)} lignes affichées (les plus récentes)`);
+      if (visibleRows) {
+        const cost = visibleRows.reduce((sum, row) => sum + (Number(row.cost) || 0), 0);
+        parts.push(`recherche : ${formatNumber(visibleRows.length)} ligne(s)${cost ? ` · ${formatCurrency(cost)}` : ''}`);
+      }
+      return parts.join(' · ');
+    }
+
     function renderDetailRows() {
       const query = normalizeSearch_(document.getElementById('detailSearch').value);
       const rows = sortDetailRows_((window.currentDetailRows || []).filter(row => !query || detailSearchText_(row).includes(query)));
+      if (window.currentDetailTotals_) document.getElementById('detailSummary').textContent = detailSummaryText_(window.currentDetailTotals_, query ? rows : null);
       const wrapper = document.getElementById('detailTableWrap');
       if (!rows.length) {
         wrapper.innerHTML = '<div class="detail-empty">Aucun événement correspondant</div>';
@@ -1873,12 +1913,14 @@
       table.className = 'detail-table';
       const headers = [
         ['Date', 'date'], ['Source', 'source'], ['IMMO', 'immo'], ['Famille', 'family'], ['Poste', 'station'], ['Catégorie', 'category'], ['Défaut', 'problem'], ['N° NC', 'ncNumber'],
-        ['Commentaire', 'comment'], ['Qté', 'quantity'], ['Nb NC', 'ncCount'], ['Temps perdu', 'downtime'], ['Rapprochement', 'matchMethod']
+        ['Commentaire', 'comment'], ['Qté', 'quantity'], ['Nb NC', 'ncCount'], ['Temps perdu', 'downtime'], ['Coût estimé', 'cost'], ['Rapprochement', 'matchMethod']
       ];
       const head = table.createTHead().insertRow();
       const sort = window.detailSort_ || { key: 'date', direction: 'desc' };
+      const numericDetailKeys = new Set(['quantity', 'ncCount', 'downtime', 'cost']);
       headers.forEach(([label, key]) => {
         const cell = document.createElement('th');
+        if (numericDetailKeys.has(key)) cell.className = 'numeric';
         cell.setAttribute('aria-sort', sort.key === key ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none');
         cell.innerHTML = `<button type="button" class="detail-sort" data-key="${key}">${label}<span class="detail-sort-indicator" aria-hidden="true">${sort.key === key ? (sort.direction === 'asc' ? '▲' : '▼') : ''}</span></button>`;
         head.appendChild(cell);
@@ -1890,13 +1932,13 @@
           formatDetailDate_(row.date), row.source, row.immo || '–', row.family || '–', row.station || '–',
           row.category || '–', row.problem || '–', row.ncNumber || '–', row.comment || '–',
           formatNumber(row.quantity), row.ncNumber ? formatNumber(row.ncCount) : '–',
-          row.downtime ? `${formatDecimal(row.downtime)} h` : '–', matchMethodLabel_(row.matchMethod)
+          row.downtime ? `${formatDecimal(row.downtime)} h` : '–', row.cost ? formatCurrency(row.cost) : '–', matchMethodLabel_(row.matchMethod)
         ];
         values.forEach((value, index) => {
           const cell = line.insertCell();
           cell.textContent = value;
           if (index === 8) cell.title = value;
-          if (index === 9 || index === 10 || index === 11) cell.className = 'numeric';
+          if (index >= 9 && index <= 12) cell.className = 'numeric';
         });
       });
       wrapper.replaceChildren(table);
@@ -1904,7 +1946,7 @@
 
     function sortDetailRows_(rows) {
       const sort = window.detailSort_ || { key: 'date', direction: 'desc' };
-      const numericKeys = new Set(['quantity', 'ncCount', 'downtime']);
+      const numericKeys = new Set(['quantity', 'ncCount', 'downtime', 'cost']);
       return rows.slice().sort((left, right) => {
         const leftValue = left[sort.key];
         const rightValue = right[sort.key];

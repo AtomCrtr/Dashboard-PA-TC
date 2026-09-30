@@ -122,7 +122,7 @@ Les commandes principales restent directement accessibles dans **Dashboard Machi
 - Les remontées aléas production (Waterspiders, feuille `Remontées aléas production`) ne sont plus consolidées : `FAITS_IMMO` ne contient que les NC et les aléas MES. Les anciens aléas production présents dans les faits ou l’archive sont ignorés à la lecture. Une NC sans IMMO mais avec un nom de machine, un poste ou une indication famille est conservée dans les volumes, familles, postes et détails ; elle reste exclue du Pareto IMMO et de la couverture master.
 - Les faits non rapprochés restent visibles dans les KPI, défauts et contrôles qualité. Le pilotage affiche la couverture famille, IMMO, MSN et durée des aléas MES afin que les données incomplètes ne disparaissent pas de la lecture métier.
 - Un IMMO absent de la source et un IMMO fourni mais non résolu sont comptés séparément. Une famille héritée du master est résolue pour l’analyse, mais ne masque pas l’absence de famille dans la source.
-- La revue valorise une NC à `250 €` en moyenne selon le scénario Business Case 2026 et une heure d’indisponibilité UPA/MEDU issue de MES à `110 €`. Ces hypothèses sont affichées dans l’interface et ne remplacent pas un coût comptable.
+- La revue valorise une NC à `250 €` en moyenne selon le scénario Business Case 2026 et une heure d’indisponibilité UPA/MEDU au paramètre `COUT_HEURE_PERDUE_EUR` (`110 €`). La même règle (`reviewFactCost_`) sert aux barres de l’item 2, au graphique MSN, au KPI « Coûts non traités » et au panneau de détail, qui affiche le coût estimé total de la sélection. Ces hypothèses ne remplacent pas un coût comptable.
 - Tous les graphiques restent filtrables par période, famille, source, IMMO, poste et MSN. Le MSN représente l’avion concerné.
 - Pour les NC, le KPI et les graphiques utilisent `NB_NC` lorsqu’il est renseigné, sinon `QUANTITE`.
 - Toutes les NC MES de la catégorie concernée sont conservées dans `NC_MES_PREVISIONNELLES`, avec le numéro provenant de la colonne `N° NC` lorsqu’il existe. Elles restent en préparation et n’alimentent pas encore les faits NC ni les KPI. Pour l’instant, les NC du dashboard proviennent exclusivement de la feuille historique `Données NC PA`.
@@ -155,12 +155,12 @@ Le KPI « Coûts non traités » donne la part des coûts NC + MES par famille e
 
 - Les réponses sont mises en cache 6 h (période de l’actualisation automatique). La clé change à chaque publication de `FAITS_IMMO` : aucune donnée périmée n’est servie. Les réponses volumineuses sont découpées en morceaux.
 - À la fin de chaque **Actualiser toutes les données**, les vues Pilotage et NC par défaut sont recalculées (préchauffage).
-- Le suivi des plans MFT et les coûts NC lus en direct sont gardés 30 min ; une copie de secours de 6 h est utilisée si un plan est inaccessible.
+- Le suivi des plans MFT est gardé 30 min ; une copie de secours de 6 h est utilisée si un plan est inaccessible. Les coûts NC ne sont plus lus en direct : ils viennent de `FAITS_IMMO`, comme le détail.
 - Le navigateur affiche immédiatement la dernière réponse reçue pour les mêmes filtres, puis la remplace ; une erreur réseau déclenche un nouvel essai automatique.
 - Les fonctions d’écriture (actualisation, import, archivage, actions MFT…) sont réservées aux éditeurs du classeur central, même si elles sont appelées depuis le navigateur.
 - Aucun script hors Google n’est chargé : seuls Google Charts et Google Fonts sont utilisés.
 
-Audit détaillé : [audit du 29 septembre 2026](docs/audits/AUDIT-2026-09-29-PA-TC.md).
+Audits : [design et données du 30 septembre 2026](docs/audits/AUDIT-2026-09-30-DESIGN-DONNEES-PA-TC.md), [audit du 29 septembre 2026](docs/audits/AUDIT-2026-09-29-PA-TC.md).
 
 ## Import MES
 
