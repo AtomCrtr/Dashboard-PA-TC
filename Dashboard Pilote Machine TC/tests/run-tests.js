@@ -1397,3 +1397,11 @@ assert.ok(!sources[1].includes('quantity * 300'));
 assert.ok(!sources[1].includes('downtime * 100'));
 assert.ok(!sources[1].includes('function readDirectNcCostAggregates_'));
 console.log('OK — coûts de revue unifiés.');
+
+// Garde-fou PA / TC : tout appel à une fonction « …_( » doit viser une fonction définie
+// (en TC, la lecture des plans MFT appelait une fonction qui n'existait qu'en PA).
+const definedNames = new Set([...sources.join('\n').matchAll(/function ([A-Za-z0-9_$]+)\(/g), ...html.matchAll(/function ([A-Za-z0-9_$]+)\(/g), ...html.matchAll(/const ([A-Za-z0-9_$]+) = /g), ...sources.join('\n').matchAll(/const ([A-Za-z0-9_$]+) = /g)].map(match => match[1]));
+const calledNames = new Set([...sources.join('\n').matchAll(/\b([a-z][A-Za-z0-9]*_)\(/g), ...html.matchAll(/\b([a-z][A-Za-z0-9]*_)\(/g)].map(match => match[1]));
+const undefinedCalls = [...calledNames].filter(name => !definedNames.has(name));
+assert.deepEqual(undefinedCalls, []);
+console.log('OK — aucun appel vers une fonction absente.');

@@ -1620,6 +1620,22 @@ function readDocMartinEquipmentRecords_(parameters) {
   return docMartinEquipmentRecords_(lastRow ? sheet.getRange(1, 1, lastRow, 3).getDisplayValues() : []);
 }
 
+// Ouverture d’un classeur source avec 3 essais en cas d’erreur passagère (délai, service).
+function openSourceSpreadsheetWithRetry_(spreadsheetId) {
+  let lastError = null;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return SpreadsheetApp.openById(spreadsheetId);
+    } catch (error) {
+      lastError = error;
+      const message = error && (error.message || String(error));
+      if (!/délai|expiration|timeout|temporar|service/i.test(message) || attempt === 2) break;
+      Utilities.sleep(500 * (attempt + 1));
+    }
+  }
+  throw new Error(`Accès à la source impossible (${spreadsheetId}) après 3 tentatives. Vérifiez les droits du compte de déploiement et réessayez. Détail : ${lastError && (lastError.message || String(lastError))}`);
+}
+
 function canonicalizeSourceHeaders_(headers, rows, sheetName) {
   const normalized = (headers || []).map(clean_);
   if (normalizeHeader_(sheetName) !== normalizeHeader_(APP.sourceSheets.aleas)) return normalized;

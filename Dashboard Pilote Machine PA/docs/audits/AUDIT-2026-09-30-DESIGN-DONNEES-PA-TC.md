@@ -125,3 +125,31 @@ Voir [ANALYSE-PLANS-ACTIONS-2026-09-29.md](ANALYSE-PLANS-ACTIONS-2026-09-29.md).
 3. **Traiter les 37 tickets TC en double** et les postes P365 / PAT.
 4. Décider du périmètre « indisponibilité machine » : UPA / MEDU seul, ou aussi aspiration, IHM, outillage.
 5. Recette de production : relever dans chaque classeur les taux IMMO / famille des `Données NC` et la couverture master, que les échantillons ne permettent pas de mesurer.
+
+## 5. Parité PA / TC
+
+Toutes les évolutions des 29 et 30/09 sont présentes dans les deux dashboards :
+- couleurs et filtre du suivi plan d’actions, actions MFT au clic ;
+- cache 6 h et préchauffage, contrôle d’accès, filtres en listes ;
+- retrait de Waterspiders, coûts unifiés, panneau de détail, correctifs design.
+
+Contrôle fait élément par élément sur le code.
+
+- ✅ **Bug TC d’origine corrigé.** La lecture des plans MFT TC appelait `openSourceSpreadsheetWithRetry_`, qui n’existait que dans le code PA. L’erreur était interceptée silencieusement : en TC, le suivi des plans était toujours « indisponible » et toutes les barres restaient grises. Un test vérifie désormais qu’aucun appel ne vise une fonction absente.
+
+Écarts volontaires, liés au périmètre :
+
+| Sujet | PA | TC |
+| --- | --- | --- |
+| Postes | P280 / P290 | 370 / 360 / 355 et variantes (liste fixe) |
+| Plans MFT | 1 classeur | 2 classeurs (370 ; 355/360/OSW) |
+| Coût d’une NC | 250 € ou scénario Business Case | pas de coût configuré : 300 € par NC |
+| Taux MES | 110 €/h | 116 €/h |
+| Graphique de disponibilité | largeur fixe | défilement horizontal, libellés complets |
+
+Écarts d’origine non modifiés :
+
+| Sujet | PA | TC | Recommandation |
+| --- | --- | --- | --- |
+| Écriture de `FAITS_IMMO` | réécriture sur place par lots, avec nouvel essai | feuille de publication temporaire puis bascule | ⬜ Aligner TC sur PA après une recette sur copie du classeur |
+| Coût d’une NC | scénarios Business Case | aucun | ⬜ Renseigner `COUT_MOYEN_NC_EUR` TC si un coût de référence existe |
