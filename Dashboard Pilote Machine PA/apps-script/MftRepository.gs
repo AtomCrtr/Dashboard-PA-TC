@@ -540,16 +540,14 @@ function readLegacyLocalMftActions_() {
 }
 
 function listLegacyMftSheets_(spreadsheet) {
-  const datePattern = /(\d{2})[ _./-]?(\d{2})[ _./-]?(\d{4})/;
   return spreadsheet.getSheets().map(sheet => {
     const name = sheet.getName();
     const normalized = normalizeHeader_(name);
     if (!normalized.includes('MFT') || !normalized.includes('MACHINES') || !normalized.includes('PA')) return null;
     if (!/ALEAS|ALEA/.test(normalized)) return null;
-    const match = name.match(datePattern);
-    if (!match) return null;
-    const meetingDate = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
-    return Number.isNaN(meetingDate.getTime()) ? null : { sheet, name, meetingDate };
+    const meetingDate = parseMftSheetDate_(name);
+    if (!meetingDate) return null;
+    return { sheet, name, meetingDate };
   }).filter(Boolean).sort((left, right) => right.meetingDate.getTime() - left.meetingDate.getTime());
 }
 

@@ -1038,21 +1038,34 @@ function mftActionsHeaders_() {
 }
 
 function findLatestMftSheet_(spreadsheet) {
-  const datePattern = /(\d{2})[ _./-]?(\d{2})[ _./-]?(\d{4})/;
   const candidates = spreadsheet.getSheets().map(sheet => {
     const name = sheet.getName();
     const normalized = normalizeHeader_(name);
     if (!normalized.includes('MFT') || !normalized.includes('MACHINES') || !normalized.includes('PA')) return null;
     if (!/ALEAS|ALEA/.test(normalized)) return null;
-    const match = name.match(datePattern);
-    if (!match) return null;
-    const meetingDate = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
-    if (Number.isNaN(meetingDate.getTime())) return null;
+    const meetingDate = parseMftSheetDate_(name);
+    if (!meetingDate) return null;
     return { sheet, name, meetingDate };
   }).filter(Boolean);
   if (!candidates.length) return null;
   candidates.sort((left, right) => right.meetingDate.getTime() - left.meetingDate.getTime());
   return candidates[0];
+}
+
+// Date de réunion lue dans le nom d'un onglet MFT (« 17092026 MFT … 355 », « MFT … 370 24092026 »).
+// Les chiffres ne doivent pas toucher d'autres chiffres : sinon « 370 24092026 » donnait l'an 922.
+function parseMftSheetDate_(name) {
+  const pattern = /(?<!\d)(\d{2})[ _./-]?(\d{2})[ _./-]?(\d{4})(?!\d)/g;
+  let found = null;
+  for (const match of String(name || '').matchAll(pattern)) {
+    const day = Number(match[1]);
+    const month = Number(match[2]);
+    const year = Number(match[3]);
+    if (year < 2000 || year > 2099 || month < 1 || month > 12 || day < 1 || day > 31) continue;
+    const date = new Date(year, month - 1, day);
+    if (date.getMonth() === month - 1 && date.getDate() === day) found = date;
+  }
+  return found;
 }
 
 function findMftHeaderRow_(rawValues) {
@@ -2585,15 +2598,12 @@ function readTcActionPlanActions_(spreadsheet, master) {
 }
 
 function listTcActionPlanSheets_(spreadsheet) {
-  const datePattern = /(\d{2})[ _./-]?(\d{2})[ _./-]?(\d{4})/;
   const candidates = spreadsheet.getSheets().map(sheet => {
     const name = sheet.getName();
     const normalized = normalizeHeader_(name);
     if (!normalized.includes('MFT') || !normalized.includes('MACHINES') || !/ALEAS|ALEA/.test(normalized)) return null;
-    const match = name.match(datePattern);
-    if (!match) return null;
-    const meetingDate = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
-    if (Number.isNaN(meetingDate.getTime())) return null;
+    const meetingDate = parseMftSheetDate_(name);
+    if (!meetingDate) return null;
     return { sheet, name, meetingDate };
   }).filter(Boolean);
   candidates.sort((left, right) => right.meetingDate.getTime() - left.meetingDate.getTime());

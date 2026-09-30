@@ -153,3 +153,18 @@ Contrôle fait élément par élément sur le code.
 | --- | --- | --- | --- |
 | Écriture de `FAITS_IMMO` | réécriture sur place par lots, avec nouvel essai | feuille de publication temporaire puis bascule | ⬜ Aligner TC sur PA après une recette sur copie du classeur |
 | Coût d’une NC | scénarios Business Case | aucun | ⬜ Renseigner `COUT_MOYEN_NC_EUR` TC si un coût de référence existe |
+
+### 5.1 Plans MFT TC (2 classeurs) — lecture des dates d’onglets ✅
+
+Le dashboard TC lit directement les deux classeurs configurés dans `Config.gs` :
+- `ID_FICHIER_PLAN_ACTIONS_TC_370` ;
+- `ID_FICHIER_PLAN_ACTIONS_TC_355_360_OSW`.
+
+Il fusionne les actions des deux plans et indique pour chaque action son plan d’origine (« MFT TC 370 » / « MFT TC 355/360/OSW »).
+
+**Bug corrigé.** Les onglets du classeur 370 sont nommés « MFT ALEAS MACHINES 370 24092026 ». La date était lue à partir de « 70 24 0920 » au lieu de « 24092026 » : l’an 922 au lieu du 24/09/2026. Conséquences pour le plan 370 :
+- ordre des réunions faux ;
+- mauvais onglets retenus pour la fenêtre de 6 mois ;
+- dates de clôture fausses, donc couleurs erronées.
+
+Le plan 355/360/OSW, dont la date est en tête du nom, n’était pas touché. `parseMftSheetDate_` exige maintenant 8 chiffres isolés et une date valide ; les trois fonctions de lecture d’onglets (PA et TC) l’utilisent.

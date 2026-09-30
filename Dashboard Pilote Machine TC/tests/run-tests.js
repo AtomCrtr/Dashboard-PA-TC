@@ -1405,3 +1405,11 @@ const calledNames = new Set([...sources.join('\n').matchAll(/\b([a-z][A-Za-z0-9]
 const undefinedCalls = [...calledNames].filter(name => !definedNames.has(name));
 assert.deepEqual(undefinedCalls, []);
 console.log('OK — aucun appel vers une fonction absente.');
+
+// Date de réunion dans le nom des onglets MFT : « 370 » ne doit pas être lu comme une partie de la date.
+assert.equal(evaluate("toIsoDate_(parseMftSheetDate_('MFT ALEAS MACHINES 370 24092026'))"), '2026-09-24');
+assert.equal(evaluate("toIsoDate_(parseMftSheetDate_('17092026 MFT ALEAS MACHINES 355'))"), '2026-09-17');
+assert.equal(evaluate("toIsoDate_(parseMftSheetDate_('MFT ALEAS MACHINES PA 03092026'))"), '2026-09-03');
+assert.equal(evaluate("parseMftSheetDate_('MFT ALEAS MACHINES 370 31022026')"), null);
+assert.equal(evaluate("parseMftSheetDate_('Instructions')"), null);
+console.log('OK — dates des onglets MFT.');
